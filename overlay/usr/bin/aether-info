@@ -1,0 +1,59 @@
+#!/bin/bash
+# aether-info — Aether sistem bilgisi
+. /etc/aether/ayarlar 2>/dev/null; . "$HOME/.config/aether/ayarlar" 2>/dev/null
+case "${LANG:-tr}" in en*) EN=1 ;; *) EN=0 ;; esac
+t() { [ $EN = 1 ] && printf '%s' "$2" || printf '%s' "$1"; }
+
+M=$'\e[38;5;141m'; B=$'\e[38;5;111m'; P=$'\e[38;5;183m'; G=$'\e[38;5;245m'; W=$'\e[1;97m'; R=$'\e[0m'
+
+. /etc/os-release
+cekirdek=$(uname -r)
+s=$(cut -d. -f1 /proc/uptime); sure="$((s/86400))$(t g d) $((s%86400/3600))$(t sa h) $((s%3600/60))$(t dk m)"
+[ $((s/86400)) = 0 ] && sure="$((s%86400/3600))$(t sa h) $((s%3600/60))$(t dk m)"
+paket=$(apk info 2>/dev/null | wc -l)
+cpu=$(awk -F': ' '/model name/{print $2; exit}' /proc/cpuinfo); cpu="${cpu:-?} ($(nproc))"
+bel=$(awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{printf "%d MiB / %d MiB", (t-a)/1024, t/1024}' /proc/meminfo)
+disk=$(df -h / | awk 'NR==2{print $3" / "$2" ("$5")"}')
+ekran=""; [ -n "$DISPLAY" ] && ekran=$(xrandr 2>/dev/null | awk '/\*/{print $1; exit}')
+gpu=""; [ -n "$DISPLAY" ] && command -v glxinfo >/dev/null && gpu=$(timeout 3 glxinfo -B 2>/dev/null | awk -F': ' '/OpenGL renderer/{print $2; exit}')
+mod=$(t "Kurulu" "Installed"); grep -q aether.canli /proc/cmdline && mod=$(t "Canlı (RAM)" "Live (RAM)")
+tema=$( [ "$TEMA" = koyu ] && t "Koyu" "Dark" || t "Açık" "Light")
+
+logo=(
+"${M}          /\\            "
+"${M}         /  \\       ${P}✦   "
+"${M}        / /\\ \\          "
+"${B}   ~~~~${M}/ /${B}~~${M}\\ \\${B}~~~~~    "
+"${M}      / ______ \\        "
+"${M}     /_/      \\_\\       "
+"                        "
+"${G}     A E T H E R        "
+)
+bilgi=(
+"${W}${USER}${G}@${W}$(hostname)${R}"
+"${G}$(n=$(( ${#USER} + ${#HOSTNAME} + 1 )); while [ $n -gt 0 ]; do printf '─'; n=$((n-1)); done)${R}"
+"${M}$(t "Sistem" "System")${R}      ${PRETTY_NAME}"
+"${M}$(t "Taban" "Base")${R}       Alpine Linux $(cat /etc/alpine-release 2>/dev/null)"
+"${M}$(t "Çekirdek" "Kernel")${R}    ${cekirdek}"
+"${M}$(t "Süre" "Uptime")${R}        ${sure}"
+"${M}$(t "Paketler" "Packages")${R}    ${paket} (apk)"
+"${M}$(t "Kabuk" "Shell")${R}       ${SHELL##*/}"
+"${M}$(t "Masaüstü" "Desktop")${R}    Openbox · Aether ${tema}"
+)
+[ -n "$ekran" ] && bilgi+=("${M}$(t "Ekran" "Display")${R}       ${ekran}")
+bilgi+=("${M}$(t "İşlemci" "CPU")${R}     ${cpu}")
+[ -n "$gpu" ] && bilgi+=("${M}GPU${R}         ${gpu}")
+bilgi+=(
+"${M}$(t "Bellek" "Memory")${R}      ${bel}"
+"${M}Disk (/)${R}    ${disk}"
+"${M}$(t "Mod" "Mode")${R}         ${mod}"
+"${M}$(t "Yapımcı" "Made by")${R}     Hot Zot"
+""
+"$(for c in 0 1 2 3 4 5 6 7; do printf '\e[4%dm   ' $c; done)${R}"
+)
+n=${#bilgi[@]}; [ ${#logo[@]} -gt $n ] && n=${#logo[@]}
+echo
+for ((i = 0; i < n; i++)); do
+  printf '  %s%s  %s\n' "${logo[$i]:-                        }" "$R" "${bilgi[$i]}"
+done
+echo

@@ -1,0 +1,28 @@
+#include <windows.h>
+#include "kaynak.h"
+KAYNAK_SIMGE ICON "eclipse.ico"
+KAYNAK_ARKAPLAN RCDATA "arkaplan.png"
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "eclipse.manifest"
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEOS 0x40004
+FILETYPE 0x1
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "041F04B0"
+    BEGIN
+      VALUE "CompanyName", "Hot Zot"
+      VALUE "FileDescription", "Eclipse - Aether web tarayicisi"
+      VALUE "FileVersion", "1.0"
+      VALUE "ProductName", "Eclipse (Aether 1.0 Nebula)"
+      VALUE "ProductVersion", "1.0"
+      VALUE "LegalCopyright", "Hot Zot"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x41F, 1200
+  END
+END

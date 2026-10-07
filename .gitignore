@@ -1,0 +1,6 @@
+cikti/
+*.iso
+*.o
+*.exe
+*.res
+sdk/

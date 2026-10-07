@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Ayarlar
+Name[en]=Settings
+Exec=aether-ayarlar
+Icon=aether-ayarlar
+Comment=Aether ayarları
+Categories=Settings;

@@ -1,0 +1,11 @@
+#!/bin/sh
+# aether-kilitle — ekranı i3lock ile kilitler (çözünürlüğe uygun Aether görseliyle)
+pgrep -x i3lock >/dev/null && exit 0
+pkill -x aether-yildizlar 2>/dev/null
+coz=$(xrandr 2>/dev/null | awk '/\*/{print $1; exit}')
+img=/usr/share/aether/kilit/$coz.png
+if [ -f "$img" ]; then
+  exec i3lock -e -i "$img"
+else
+  exec i3lock -e -c 080a1e
+fi

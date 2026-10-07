@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Eclipse
+GenericName=Web Tarayıcı
+GenericName[en]=Web Browser
+Comment=Aether'in web tarayıcısı
+Comment[en]=Aether's web browser
+Exec=eclipse-tarayici %u
+Icon=aether-eclipse
+Categories=Network;WebBrowser;
+MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+Actions=gizli;
+[Desktop Action gizli]
+Name=Yeni gizli pencere
+Name[en]=New private window
+Exec=eclipse-tarayici --gizli

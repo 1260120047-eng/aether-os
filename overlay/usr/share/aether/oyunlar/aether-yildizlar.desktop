@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Yıldız Yolculuğu
+Name[en]=Star Voyage
+Exec=aether-yildizlar --pencere
+Icon=aether
+Comment=Aether yıldız alanı — herhangi bir tuşla çık

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Oyunlar
+Name[en]=Games
+Exec=aether-oyunlar
+Icon=aether-oyunlar
+Comment=Oyun başlatıcı
+Categories=Game;

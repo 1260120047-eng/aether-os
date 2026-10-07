@@ -1,0 +1,8 @@
+#!/bin/sh
+# aether-ses giris|bildirim|hata|kapanis — ses efekti çalar (Müzik ve sesler eklentisi gerekir)
+. /etc/aether/ayarlar; [ -f "$HOME/.config/aether/ayarlar" ] && . "$HOME/.config/aether/ayarlar"
+[ "$SESLER" = 1 ] || exit 0
+command -v aplay >/dev/null || exit 0
+f=/usr/share/aether/sesler/$1.wav
+[ -f "$f" ] && aplay -q "$f" 2>/dev/null
+exit 0

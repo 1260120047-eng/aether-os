@@ -1,0 +1,10 @@
+DIL=tr
+KLAVYE=tr
+TEMA=acik
+DUVAR=/usr/share/aether/wallpapers/nebula.png
+KILIT_DK=10
+EKRAN_KORUYUCU=0
+KORUYUCU_DK=5
+SESLER=1
+ANIMASYON=1
+KARSILAMA=1

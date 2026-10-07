@@ -1,0 +1,46 @@
+#!/bin/sh
+# aether-menu — Openbox sağ tık menüsü (pipe menu). Dile göre Türkçe/İngilizce üretir.
+case "${LANG:-tr}" in en*) EN=1 ;; *) EN=0 ;; esac
+t() { [ $EN = 1 ] && printf '%s' "$2" || printf '%s' "$1"; }
+i() { # etiket simge komut
+  printf '<item label="%s" icon="%s"><action name="Execute"><command>%s</command></action></item>\n' "$1" "$2" "$3"
+}
+IC=/usr/share/icons
+ad() { for p in "$IC/hicolor/48x48/apps/$1.png" "$IC/Adwaita/48x48/legacy/$1.png" "$IC/Adwaita/scalable/legacy/$1-symbolic.svg"; do [ -f "$p" ] && { echo "$p"; return; }; done; }
+
+echo '<openbox_pipe_menu>'
+if [ "$1" = guc ]; then
+  printf '<separator label="A E T H E R"/>\n'
+  i "$(t Kilitle Lock)" "$(ad aether-kilit)" "aether-guc kilitle"
+  grep -q aether.canli /proc/cmdline || i "$(t "Oturumu Kapat" "Log Out")" "$(ad aether-cikis)" "aether-guc cikis"
+  i "$(t "Yeniden Başlat" "Restart")" "$(ad aether-yeniden)" "aether-guc yeniden"
+  i "$(t Kapat "Shut Down")" "$(ad aether-kapat)" "aether-guc kapat"
+  echo '</openbox_pipe_menu>'; exit 0
+fi
+printf '<separator label="A E T H E R"/>\n'
+grep -q aether.canli /proc/cmdline && { i "$(t "Aether'i Diske Kur" "Install Aether")" "$(ad aether-kurulum)" aether-kurulum; echo '<separator/>'; }
+i "Terminal" "$(ad aether-terminal)" lxterminal
+i "$(t Dosyalar Files)" "$(ad aether-dosyalar)" pcmanfm
+i "$(t "Metin Editörü" "Text Editor")" "$(ad aether-metin)" mousepad
+i "Eclipse  ($(t "Web Tarayıcı" "Web Browser"))" "$(ad aether-eclipse)" eclipse-tarayici
+echo '<separator/>'
+printf '<menu id="aether-uygulamalar" label="%s" icon="%s">\n' "$(t Uygulamalar Applications)" "$(ad aether-uygulamalar)"
+i "$(t "Resim Görüntüleyici" "Image Viewer")" "$(ad aether-resim)" ristretto
+i "$(t "Hesap Makinesi" "Calculator")" "$(ad aether-hesap)" galculator
+command -v audacious >/dev/null && i "$(t "Müzik Çalar" "Music Player")" "$(ad aether-muzik)" audacious
+echo '</menu>'
+printf '<menu id="aether-oyunlar" label="%s" icon="%s">\n' "$(t Oyunlar Games)" "$(ad aether-oyunlar)"
+i "$(t "Oyun Başlatıcı" "Game Launcher")" "$(ad aether-oyunlar)" aether-oyunlar
+i "$(t "Mayın Tarlası" "Minesweeper")" "$(ad aether-mayin)" aether-mayin
+echo '</menu>'
+echo '<menu id="client-list-combined-menu"/>'
+echo '<separator/>'
+i "$(t Ayarlar Settings)" "$(ad aether-ayarlar)" aether-ayarlar
+i "$(t "Aether Hakkında" "About Aether")" "$(ad aether-hakkinda)" aether-hakkinda
+i "$(t "Ekran Görüntüsü" "Screenshot")" "$(ad aether-kamera)" aether-ekran-goruntusu
+echo '<separator/>'
+i "$(t Kilitle Lock)" "$(ad aether-kilit)" "aether-guc kilitle"
+grep -q aether.canli /proc/cmdline || i "$(t "Oturumu Kapat" "Log Out")" "$(ad aether-cikis)" "aether-guc cikis"
+i "$(t "Yeniden Başlat" "Restart")" "$(ad aether-yeniden)" "aether-guc yeniden"
+i "$(t Kapat "Shut Down")" "$(ad aether-kapat)" "aether-guc kapat"
+echo '</openbox_pipe_menu>'

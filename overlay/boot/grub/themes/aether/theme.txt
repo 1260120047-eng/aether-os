@@ -1,0 +1,33 @@
+# Aether 1.0 "Nebula" GRUB teması — Yapımcı: Hot Zot
+title-text: ""
+desktop-image: "arkaplan.png"
+desktop-color: "#05081a"
+terminal-font: "JetBrains Mono Regular 16"
+
++ boot_menu {
+  left = 22%
+  top = 44%
+  width = 56%
+  height = 34%
+  item_font = "JetBrains Mono Regular 16"
+  item_color = "#bdb4e6"
+  selected_item_font = "JetBrains Mono Regular 16"
+  selected_item_color = "#ffffff"
+  item_height = 34
+  item_padding = 14
+  item_spacing = 4
+  icon_width = 0
+  icon_height = 0
+  item_icon_space = 0
+  selected_item_pixmap_style = "select_*.png"
+  scrollbar = false
+}
++ label {
+  top = 92%
+  left = 0
+  width = 100%
+  align = "center"
+  text = "↑ ↓ seç / select   ·   Enter başlat / boot   ·   Yapımcı: Hot Zot"
+  color = "#6f66a3"
+  font = "JetBrains Mono Regular 12"
+}

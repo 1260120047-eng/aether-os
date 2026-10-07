@@ -1,0 +1,23 @@
+#!/bin/sh
+# aether-guncelle — tüm sistemi tek komutla günceller
+case "${LANG:-tr}" in en*) EN=1 ;; *) EN=0 ;; esac
+t() { [ $EN = 1 ] && echo "$2" || echo "$1"; }
+M='\033[38;5;141m'; G='\033[38;5;245m'; Y='\033[38;5;114m'; K='\033[38;5;203m'; R='\033[0m'
+printf "\n${M}  A E T H E R${R}  ${G}%s${R}\n\n" "$(t 'sistem güncelleme' 'system update')"
+if grep -q aether.canli /proc/cmdline; then
+  printf "${K}  %s${R}\n\n" "$(t 'Canlı oturumdasın; güncellemeler yeniden başlatınca kaybolur.' 'Live session: updates are lost on reboot.')"
+fi
+SU=""; [ "$(id -u)" = 0 ] || SU=doas
+printf "${G}› %s${R}\n" "$(t 'Paket listesi yenileniyor…' 'Refreshing package lists…')"
+if ! $SU apk update; then
+  printf "\n${K}✘ %s${R}\n" "$(t 'Depoya ulaşılamadı. İnternet bağlantını kontrol et.' 'Could not reach the repository. Check your internet connection.')"; exit 1
+fi
+printf "\n${G}› %s${R}\n" "$(t 'Paketler güncelleniyor…' 'Upgrading packages…')"
+if $SU apk upgrade --available; then
+  printf "\n${Y}✔ %s${R}\n\n" "$(t 'Aether güncel!' 'Aether is up to date!')"
+  if [ ! -d "/lib/modules/$(uname -r)" ]; then
+    printf "${G}  %s${R}\n\n" "$(t 'Çekirdek güncellendi; yeniden başlatman önerilir.' 'The kernel was updated; please restart.')"
+  fi
+else
+  printf "\n${K}✘ %s${R}\n\n" "$(t 'Güncelleme sırasında hata oldu.' 'The update failed.')"; exit 1
+fi

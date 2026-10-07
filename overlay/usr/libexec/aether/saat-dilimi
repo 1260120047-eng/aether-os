@@ -1,0 +1,7 @@
+#!/bin/sh
+# saat-dilimi BÖLGE/ŞEHİR — sistem saat dilimini ayarlar (root)
+z="$1"
+case "$z" in *..*|'') exit 1 ;; esac
+[ -f "/usr/share/zoneinfo/$z" ] || exit 1
+ln -sf "/usr/share/zoneinfo/$z" /etc/localtime
+echo "$z" > /etc/timezone

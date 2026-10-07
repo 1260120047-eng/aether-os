@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Hoş Geldin
+Name[en]=Welcome
+Exec=aether-hosgeldin
+Icon=aether-hosgeldin
+Comment=Aether karşılama ekranı
+Categories=System;

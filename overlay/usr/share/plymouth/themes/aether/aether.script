@@ -1,0 +1,53 @@
+// Aether 1.0 "Nebula" açılış ekranı — Yapımcı: Hot Zot
+W = Window.GetWidth(); H = Window.GetHeight();
+arka = Image("arkaplan.png");
+arka = arka.Scale(W, H);
+arka_s = Sprite(arka); arka_s.SetZ(-100);
+
+logo = Image("logo.png");
+oran = W / 1600; if (oran > 1) oran = 1; if (oran < 0.45) oran = 0.45;
+logo = logo.Scale(logo.GetWidth() * oran, logo.GetHeight() * oran);
+logo_s = Sprite(logo);
+logo_s.SetPosition(W / 2 - logo.GetWidth() / 2, H / 2 - logo.GetHeight() / 2 - 30, 10);
+logo_s.SetOpacity(0);
+
+cw = 360 * oran / 0.75; if (cw > 360) cw = 360;
+cubuk_arka = Image("cubuk_arka.png").Scale(cw, 3);
+cubuk_arka_s = Sprite(cubuk_arka);
+cy = H / 2 + logo.GetHeight() / 2 + 20;
+cubuk_arka_s.SetPosition(W / 2 - cw / 2, cy, 10);
+cubuk_img = Image("cubuk.png");
+cubuk_s = Sprite(); cubuk_s.SetPosition(W / 2 - cw / 2, cy, 11);
+
+global.zaman = 0; global.ilerleme = 0;
+fun guncelle() {
+  global.zaman++;
+  // Konsol ekranı arada temizleyebildiği için arka planı düzenli olarak tamamen yeniden çizdir
+  // (plymouth yalnızca değişen bölgeleri çizer)
+  faz = global.zaman % 12;
+  if (faz == 0) { global.arka_s.SetOpacity(0.97); global.cubuk_arka_s.SetOpacity(0.97); }
+  if (faz == 1) { global.arka_s.SetOpacity(1); global.cubuk_arka_s.SetOpacity(1); }
+  o = global.zaman / 40; if (o > 1) o = 1;
+  global.logo_s.SetOpacity(o);
+  // ilerleme gelmezse yavaşça kendiliğinden dolsun
+  hedef = global.zaman / 600; if (hedef > 0.9) hedef = 0.9;
+  if (hedef > global.ilerleme) global.ilerleme = hedef;
+  gw = Math.Int(global.cw * global.ilerleme); if (gw < 1) gw = 1;
+  global.cubuk_s.SetImage(global.cubuk_img.Scale(gw, 3));
+}
+Plymouth.SetRefreshFunction(guncelle);
+fun ilerle(sure, oran2) { if (oran2 > global.ilerleme) global.ilerleme = oran2; }
+Plymouth.SetBootProgressFunction(ilerle);
+
+// şifre istemi (ör. şifreli disk) için basit metin
+mesaj_s = Sprite();
+fun sor(istem, madde) {
+  t = istem + "  "; for (i = 0; i < madde; i++) t = t + "•";
+  global.mesaj_s.SetImage(Image.Text(t, 0.85, 0.82, 1));
+  global.mesaj_s.SetPosition(global.W / 2 - 150, global.cy + 30, 20);
+}
+Plymouth.SetDisplayPasswordFunction(sor);
+fun normal() { global.mesaj_s.SetImage(Image.Text("", 1, 1, 1)); }
+Plymouth.SetDisplayNormalFunction(normal);
+fun kapanis() { global.ilerleme = 1; }
+Plymouth.SetQuitFunction(kapanis);

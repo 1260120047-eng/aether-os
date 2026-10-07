@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Aether
+Description=Aether 1.0 Nebula açılış ekranı
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/aether
+ScriptFile=/usr/share/plymouth/themes/aether/aether.script

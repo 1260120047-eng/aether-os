@@ -1,0 +1,17 @@
+CFLAGS ?= -O2 -Wall -Wno-unused-function -Wno-deprecated-declarations
+GTK = $(shell pkg-config --cflags --libs gtk+-3.0)
+GIO = $(shell pkg-config --cflags --libs gio-unix-2.0)
+SDL = $(shell pkg-config --cflags --libs sdl2)
+WEB = $(shell pkg-config --cflags --libs webkit2gtk-4.1)
+APPS = aether-kurulum aether-ayarlar aether-hosgeldin aether-hakkinda aether-oyunlar aether-mayin aether-yildizlar eclipse-tarayici
+all: $(APPS)
+aether-kurulum: kurulum.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(GTK)
+aether-ayarlar: ayarlar.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(GTK)
+aether-hosgeldin: hosgeldin.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(GTK)
+aether-hakkinda: hakkinda.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(GTK)
+aether-oyunlar: oyunlar.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(GTK) $(GIO)
+aether-mayin: mayin.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(GTK)
+eclipse-tarayici: eclipse.c aether.h ; $(CC) $(CFLAGS) $< -o $@ $(WEB)
+aether-yildizlar: yildizlar.c ; $(CC) $(CFLAGS) $< -o $@ $(SDL)
+install: all ; install -Dm755 -t $(DESTDIR)/usr/bin $(APPS) && strip $(addprefix $(DESTDIR)/usr/bin/,$(APPS))
+clean: ; rm -f $(APPS)

@@ -1,0 +1,14 @@
+#!/bin/sh
+# aether-bosta — boşta kalma izleyicisi: ekran koruyucu ve otomatik kilit
+grep -q aether.canli /proc/cmdline && CANLI=1
+while sleep 10; do
+  . /etc/aether/ayarlar; [ -f "$HOME/.config/aether/ayarlar" ] && . "$HOME/.config/aether/ayarlar"
+  bos=$(xprintidle 2>/dev/null) || continue
+  bos=$((bos / 1000))
+  # canlı oturumda şifre olmadığı için otomatik kilit yok
+  if [ -z "$CANLI" ] && [ "${KILIT_DK:-0}" -gt 0 ] && [ $bos -ge $((KILIT_DK * 60)) ]; then
+    pgrep -x i3lock >/dev/null || aether-kilitle
+  elif [ "$EKRAN_KORUYUCU" = 1 ] && [ $bos -ge $((${KORUYUCU_DK:-5} * 60)) ]; then
+    pgrep -x aether-yildizlar >/dev/null || pgrep -x i3lock >/dev/null || aether-yildizlar &
+  fi
+done

@@ -1,0 +1,9 @@
+#!/bin/sh
+# aether-guc kilitle | cikis | yeniden | kapat
+case "$1" in
+  kilitle) exec aether-kilitle ;;
+  cikis)   aether-ses kapanis; openbox --exit ;;
+  yeniden) aether-ses kapanis; loginctl reboot 2>/dev/null || doas /sbin/reboot ;;
+  kapat)   aether-ses kapanis; loginctl poweroff 2>/dev/null || doas /sbin/poweroff ;;
+  *) echo "Kullanım: aether-guc kilitle|cikis|yeniden|kapat"; exit 1 ;;
+esac

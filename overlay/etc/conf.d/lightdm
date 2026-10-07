@@ -1,0 +1,4 @@
+# Aether: giriş ekranının dili
+LANG=tr_TR.UTF-8
+[ -f /etc/aether/dil ] && . /etc/aether/dil
+supervise_daemon_args="--env LANG=$LANG"

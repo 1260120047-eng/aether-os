@@ -1,0 +1,84 @@
+# Aether Openbox teması — Aether (Yapımcı: Hot Zot)
+border.width: 1
+padding.width: 8
+padding.height: 5
+window.handle.width: 0
+window.client.padding.width: 0
+window.client.padding.height: 0
+menu.overlap.x: 0
+menu.overlap.y: 0
+border.color: #7c6ad6
+window.active.border.color: #7c6ad6
+window.inactive.border.color: #c9c8d4
+window.active.title.separator.color: #c9c8d4
+window.inactive.title.separator.color: #c9c8d4
+window.active.client.color: #f4f4f8
+window.inactive.client.color: #ebebf0
+window.active.title.bg: flat solid
+window.active.title.bg.color: #f4f4f8
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: #ebebf0
+window.active.label.bg: parentrelative
+window.inactive.label.bg: parentrelative
+window.active.label.text.color: #26223f
+window.inactive.label.text.color: #9a98aa
+window.label.text.justify: left
+window.active.button.unpressed.bg: parentrelative
+window.active.button.unpressed.image.color: #26223f
+window.active.button.hover.bg: flat solid
+window.active.button.hover.bg.color: #e2ddfb
+window.active.button.hover.image.color: #26223f
+window.active.button.pressed.bg: flat solid
+window.active.button.pressed.bg.color: #5b4bd6
+window.active.button.pressed.image.color: #ffffff
+window.active.button.disabled.bg: parentrelative
+window.active.button.disabled.image.color: #9a98aa
+window.active.button.toggled.bg: parentrelative
+window.active.button.toggled.image.color: #5b4bd6
+window.inactive.button.unpressed.bg: parentrelative
+window.inactive.button.unpressed.image.color: #9a98aa
+window.inactive.button.hover.bg: flat solid
+window.inactive.button.hover.bg.color: #e2ddfb
+window.inactive.button.hover.image.color: #26223f
+window.inactive.button.pressed.bg: flat solid
+window.inactive.button.pressed.bg.color: #5b4bd6
+window.inactive.button.disabled.bg: parentrelative
+window.inactive.button.disabled.image.color: #9a98aa
+window.inactive.button.toggled.bg: parentrelative
+window.inactive.button.toggled.image.color: #9a98aa
+menu.border.width: 1
+menu.border.color: #7c6ad6
+menu.items.bg: flat solid
+menu.items.bg.color: #fbfbfd
+menu.items.text.color: #26223f
+menu.items.disabled.text.color: #9a98aa
+menu.items.active.bg: flat solid
+menu.items.active.bg.color: #5b4bd6
+menu.items.active.text.color: #ffffff
+menu.items.active.disabled.text.color: #9a98aa
+menu.title.bg: flat solid
+menu.title.bg.color: #efedf8
+menu.title.text.color: #5b4bd6
+menu.title.text.justify: left
+menu.separator.color: #dddce6
+menu.separator.width: 1
+menu.separator.padding.width: 6
+menu.separator.padding.height: 3
+osd.border.width: 1
+osd.border.color: #7c6ad6
+osd.bg: flat solid
+osd.bg.color: #fbfbfd
+osd.label.bg: parentrelative
+osd.label.text.color: #26223f
+osd.hilight.bg: flat solid
+osd.hilight.bg.color: #5b4bd6
+osd.unhilight.bg: flat solid
+osd.unhilight.bg.color: #dddce6
+osd.button.unpressed.bg: flat solid
+osd.button.unpressed.bg.color: #fbfbfd
+osd.button.unpressed.*.border.color: #dddce6
+osd.button.pressed.bg: flat solid
+osd.button.pressed.bg.color: #5b4bd6
+osd.button.focused.bg: flat solid
+osd.button.focused.bg.color: #e2ddfb
+osd.button.focused.*.border.color: #5b4bd6

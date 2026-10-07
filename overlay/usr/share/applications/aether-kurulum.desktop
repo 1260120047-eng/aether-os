@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Aether'i Kur
+Name[en]=Install Aether
+Exec=aether-kurulum
+Icon=aether-kurulum
+Comment=Aether'i diske kur
+Categories=System;

@@ -1,0 +1,6 @@
+#!/bin/sh
+# aether-ekran-goruntusu [--alan] — ekran görüntüsünü Resimler klasörüne kaydeder
+d=$(. "$HOME/.config/user-dirs.dirs" 2>/dev/null; echo "${XDG_PICTURES_DIR:-$HOME/Resimler}")
+mkdir -p "$d"
+f="$d/ekran-$(date +%Y-%m-%d-%H%M%S).png"
+if [ "$1" = --alan ]; then scrot -s -f "$f"; else sleep 0.3; scrot "$f"; fi && aether-ses bildirim &

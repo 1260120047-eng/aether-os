@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Mayın Tarlası
+Name[en]=Minesweeper
+Exec=aether-mayin
+Icon=aether-mayin
+Comment=Klasik mayın tarlası
+Categories=Game;LogicGame;

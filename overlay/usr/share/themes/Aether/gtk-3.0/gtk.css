@@ -1,0 +1,22 @@
+/* Aether GTK teması — Aether. Adwaita üzerine keskin köşeler ve Aether moru. Yapımcı: Hot Zot */
+@import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained.css");
+@define-color theme_selected_bg_color #5b4bd6;
+@define-color accent_bg_color #5b4bd6;
+* { border-radius: 0; -gtk-outline-radius: 0; }
+window, dialog, popover, menu, .csd { border-radius: 0; }
+button.suggested-action, button.suggested-action:hover {
+  background-image: none; background-color: #5b4bd6; border-color: #4a3bc0; color: #ffffff; text-shadow: none; box-shadow: none; }
+button.suggested-action:hover { background-color: shade(#5b4bd6, 1.1); }
+button.suggested-action:active { background-color: #4a3bc0; }
+button.destructive-action { background-image: none; background-color: #c62828; border-color: #a11f1f; color: #fff; text-shadow: none; }
+*:selected, selection, row:selected, treeview.view:selected, flowboxchild:selected, iconview:selected,
+menuitem:hover, modelbutton:hover, entry selection, textview text selection {
+  background-color: #5b4bd6; color: #ffffff; }
+check:checked, radio:checked, switch:checked {
+  background-image: none; background-color: #5b4bd6; border-color: #4a3bc0; color: #ffffff; }
+progressbar progress, scale highlight, levelbar block.filled { background-image: none; background-color: #5b4bd6; border-color: #4a3bc0; }
+entry:focus, spinbutton:focus, textview:focus { border-color: #5b4bd6; box-shadow: inset 0 0 0 1px #5b4bd6; }
+headerbar { border-radius: 0; }
+stacksidebar row { padding: 8px 14px; }
+stacksidebar row:selected { background-color: #5b4bd6; color: #fff; }
+tooltip { border-radius: 0; }

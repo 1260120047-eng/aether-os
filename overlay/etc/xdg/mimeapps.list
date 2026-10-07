@@ -1,0 +1,5 @@
+[Default Applications]
+text/html=eclipse.desktop
+x-scheme-handler/http=eclipse.desktop
+x-scheme-handler/https=eclipse.desktop
+application/xhtml+xml=eclipse.desktop

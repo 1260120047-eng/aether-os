@@ -1,0 +1,42 @@
+#!/bin/sh
+# Aether masaüstü oturumu — LightDM tarafından başlatılır
+AYAR="$HOME/.config/aether/ayarlar"
+mkdir -p "$HOME/.config/aether"
+[ -f "$AYAR" ] || cp /etc/aether/ayarlar "$AYAR"
+. /etc/aether/ayarlar; . "$AYAR"
+
+case "$DIL" in
+  en) export LANG=en_US.UTF-8 ;;
+  *)  export LANG=tr_TR.UTF-8 ;;
+esac
+export XDG_CURRENT_DESKTOP=Aether XDG_SESSION_DESKTOP=aether DESKTOP_SESSION=aether
+export XDG_DATA_DIRS=/usr/local/share:/usr/share
+
+# Kullanıcı klasörleri (dile göre)
+if [ "$DIL" = en ]; then
+  B=Documents; D=Downloads; M=Music; R=Pictures; V=Videos; O=Games
+else
+  B=Belgeler; D=İndirilenler; M=Müzik; R=Resimler; V=Videolar; O=Oyunlar
+fi
+for k in "$B" "$D" "$M" "$R" "$V" "$O"; do mkdir -p "$HOME/$k"; done
+cat > "$HOME/.config/user-dirs.dirs" <<EOF
+XDG_DESKTOP_DIR="\$HOME"
+XDG_DOCUMENTS_DIR="\$HOME/$B"
+XDG_DOWNLOAD_DIR="\$HOME/$D"
+XDG_MUSIC_DIR="\$HOME/$M"
+XDG_PICTURES_DIR="\$HOME/$R"
+XDG_VIDEOS_DIR="\$HOME/$V"
+EOF
+
+aether-uygula --oturum
+xsettingsd >/dev/null 2>&1 &
+aether-bosta >/dev/null 2>&1 &
+(sleep 2; aether-ses giris) &
+
+if grep -q aether.canli /proc/cmdline; then
+  (sleep 1; aether-hosgeldin) &
+elif [ "$KARSILAMA" = 1 ]; then
+  (sleep 1; aether-hosgeldin) &
+fi
+
+exec dbus-launch --exit-with-session openbox

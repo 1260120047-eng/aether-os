@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+# Giriş ekranı açılmadan hemen önce açılış ekranını kapatır
+description="Aether açılış ekranını kapat"
+depend() { before lightdm; after aether-splash aether-canli dbus elogind; }
+start() {
+	/usr/bin/plymouth --ping 2>/dev/null || return 0
+	/usr/bin/plymouth quit --retain-splash 2>/dev/null
+	return 0
+}

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Aether Hakkında
+Name[en]=About Aether
+Exec=aether-hakkinda
+Icon=aether-hakkinda
+Comment=Sistem bilgisi
+Categories=System;
