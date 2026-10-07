@@ -24,48 +24,44 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Kodu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Alpine 3.22 derleme ortamı
-        id: alpine
-        uses: jirutka/setup-alpine@v1
-        with:
-          branch: v3.22
-
-      - name: Klasörleri yerleştir
-        shell: alpine.sh --root {0}
         run: |
-          mkdir -p /work
-          ln -sfn "${{ github.workspace }}/betikler" /s
-          ln -sfn "${{ github.workspace }}/overlay" /work/overlay
-          ln -sfn "${{ github.workspace }}/src" /work/src
+          R="$HOME/alpine"
+          M=https://dl-cdn.alpinelinux.org/alpine/v3.22
+          F=$(curl -fsSL --retry 5 $M/releases/x86_64/latest-releases.yaml | awk '/file: alpine-minirootfs-.*x86_64.tar.gz/{print $2; exit}')
+          echo "minirootfs: $F"
+          mkdir -p "$R"
+          curl -fsSL --retry 5 "$M/releases/x86_64/$F" | sudo tar xz -C "$R"
+          printf '%s\n' "$M/main" "$M/community" | sudo tee "$R/etc/apk/repositories" >/dev/null
+          sudo cp /etc/resolv.conf "$R/etc/resolv.conf"
+          for m in proc sys dev dev/pts; do sudo mkdir -p "$R/$m"; sudo mount --bind "/$m" "$R/$m"; done
+          sudo mkdir -p "$R/repo" "$R/work"
+          sudo mount --bind "$GITHUB_WORKSPACE" "$R/repo"
+          sudo ln -sfn /repo/betikler "$R/s"
+          sudo ln -sfn /repo/overlay "$R/work/overlay"
+          sudo ln -sfn /repo/src "$R/work/src"
+          echo "ALPINE=$R" >> "$GITHUB_ENV"
 
       - name: Derleme araçları
-        shell: alpine.sh --root {0}
-        run: |
-          sh /s/tools.sh
-          sh /s/devtools.sh
+        run: sudo chroot "$ALPINE" /bin/sh -c 'apk update -q && sh /s/tools.sh && sh /s/devtools.sh'
 
       - name: Kök sistem
-        shell: alpine.sh --root {0}
-        run: sh /s/rootfs.sh
+        run: sudo chroot "$ALPINE" /bin/sh /s/rootfs.sh
 
       - name: WebKit (Eclipse)
-        shell: alpine.sh --root {0}
-        run: sh /s/webkit.sh
+        run: sudo chroot "$ALPINE" /bin/sh /s/webkit.sh
 
       - name: ISO
-        shell: alpine.sh --root {0}
         run: |
-          sh /s/build.sh
-          test -s /work/cikti/aether-1.0-nebula.iso
-          cd /work/cikti && sha256sum aether-1.0-nebula.iso > aether-1.0-nebula.iso.sha256
-          cat aether-1.0-nebula.iso.sha256
+          sudo chroot "$ALPINE" /bin/sh -c 'sh /s/build.sh && test -s /work/cikti/aether-1.0-nebula.iso && cd /work/cikti && sha256sum aether-1.0-nebula.iso > aether-1.0-nebula.iso.sha256'
+          cat "$ALPINE/work/cikti/aether-1.0-nebula.iso.sha256"
 
       - name: ISO'yu dışarı çıkar
         run: |
           mkdir -p cikti
-          sudo cp "${{ steps.alpine.outputs.root-path }}"/work/cikti/aether-1.0-nebula.iso* cikti/
+          sudo cp "$ALPINE"/work/cikti/aether-1.0-nebula.iso* cikti/
           sudo chown -R "$(id -u)" cikti
           ls -la cikti
           {
