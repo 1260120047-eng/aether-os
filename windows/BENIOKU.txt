@@ -1,0 +1,22 @@
+Eclipse - Aether web tarayicisi (Windows 10/11, 64 bit)
+Surum 1.1
+
+Calistirma
+  Eclipse.exe dosyasina cift tikla. WebView2Loader.dll ayni klasorde kalmali.
+  Sayfa motoru Microsoft Edge WebView2 Runtime; Windows 10/11 ile birlikte gelir.
+  Yoksa Eclipse indirme sayfasini acmayi teklif eder.
+
+Kisayollar
+  Ctrl+T yeni sekme, Ctrl+W sekmeyi kapat, Ctrl+Tab sekme degistir
+  Ctrl+L adres cubugu, Ctrl+D yer imi, Ctrl+H gecmis, Ctrl+J indirmeler
+  Ctrl+Shift+N gizli pencere, Ctrl + / - / 0 yakinlastir
+  F5 yenile, F11 tam ekran, F12 gelistirici araclari, Alt+Sol/Sag geri/ileri
+  Sekmeye orta tik: kapat
+
+Reklam engelleyici
+  Varsayilan olarak acik. Eclipse menusundeki "Reklam engelleyici"
+  ile kapatip acabilirsin. Liste: AdAway (CC BY 3.0).
+
+Veriler
+  Yer imleri ve gecmis: %APPDATA%\Aether\Eclipse
+  Cerezler ve onbellek:  %LOCALAPPDATA%\Aether\Eclipse\Motor

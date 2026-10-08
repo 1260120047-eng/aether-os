@@ -58,16 +58,30 @@ jobs:
           sudo chroot "$ALPINE" /bin/sh -c 'sh /s/build.sh && test -s /work/cikti/aether-1.1-nebula.iso && cd /work/cikti && sha256sum aether-1.1-nebula.iso > aether-1.1-nebula.iso.sha256'
           cat "$ALPINE/work/cikti/aether-1.1-nebula.iso.sha256"
 
+      - name: Eclipse (Windows)
+        run: |
+          sudo mkdir -p "$ALPINE/work/win/src"
+          sudo cp -a windows/. "$ALPINE/work/win/src/"
+          sudo chroot "$ALPINE" /bin/sh -c 'set -e
+            apk add -q curl zip imagemagick rsvg-convert
+            sh /work/win/src/win.sh
+            sh /work/win/src/winbuild.sh
+            P=/tmp/paket/Eclipse; mkdir -p $P
+            cp /work/win/src/Eclipse.exe /work/win/src/BENIOKU.txt /work/win/sdk/build/native/x64/WebView2Loader.dll $P/
+            cd /tmp/paket && zip -q -9 -r /work/cikti/Eclipse-Windows.zip Eclipse
+            cd /work/cikti && sha256sum Eclipse-Windows.zip > Eclipse-Windows.zip.sha256'
+          cat "$ALPINE/work/cikti/Eclipse-Windows.zip.sha256"
+
       - name: ISO'yu dışarı çıkar
         run: |
           mkdir -p cikti
-          sudo cp "$ALPINE"/work/cikti/aether-1.1-nebula.iso* cikti/
+          sudo cp "$ALPINE"/work/cikti/aether-1.1-nebula.iso* "$ALPINE"/work/cikti/Eclipse-Windows.zip* cikti/
           sudo chown -R "$(id -u)" cikti
           ls -la cikti
           {
             echo "### Aether ISO"
             echo '```'
-            cat cikti/aether-1.1-nebula.iso.sha256
+            cat cikti/aether-1.1-nebula.iso.sha256 cikti/Eclipse-Windows.zip.sha256
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 

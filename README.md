@@ -76,7 +76,7 @@ sh windows/win.sh        # mingw-w64 ve WebView2 SDK
 sh windows/winbuild.sh   # Eclipse.exe
 ```
 
-`winbuild.sh` kaynakları `/work/win/src` altında bekler.
+`winbuild.sh` kaynakları `/work/win/src` altında bekler. Otomatik derleme, Eclipse-Windows.zip paketini de ISO ile birlikte üretir.
 
 ## Katkı ve geri bildirim
 
