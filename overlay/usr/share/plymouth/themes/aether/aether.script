@@ -1,4 +1,4 @@
-// Aether 1.0 "Nebula" açılış ekranı — Yapımcı: Hot Zot
+// Aether 1.1 "Nebula" açılış ekranı
 W = Window.GetWidth(); H = Window.GetHeight();
 arka = Image("arkaplan.png");
 arka = arka.Scale(W, H);

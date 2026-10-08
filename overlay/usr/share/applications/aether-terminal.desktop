@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Name[tr]=Terminal
+Comment=Use the command line
+Comment[tr]=Komut satırını kullan
+Exec=aether-terminal
+Icon=aether-terminal
+Terminal=false
+Categories=GTK;System;TerminalEmulator;
+Keywords=shell;prompt;command;commandline;kabuk;komut;
+StartupNotify=true

@@ -55,19 +55,19 @@ jobs:
 
       - name: ISO
         run: |
-          sudo chroot "$ALPINE" /bin/sh -c 'sh /s/build.sh && test -s /work/cikti/aether-1.0-nebula.iso && cd /work/cikti && sha256sum aether-1.0-nebula.iso > aether-1.0-nebula.iso.sha256'
-          cat "$ALPINE/work/cikti/aether-1.0-nebula.iso.sha256"
+          sudo chroot "$ALPINE" /bin/sh -c 'sh /s/build.sh && test -s /work/cikti/aether-1.1-nebula.iso && cd /work/cikti && sha256sum aether-1.1-nebula.iso > aether-1.1-nebula.iso.sha256'
+          cat "$ALPINE/work/cikti/aether-1.1-nebula.iso.sha256"
 
       - name: ISO'yu dışarı çıkar
         run: |
           mkdir -p cikti
-          sudo cp "$ALPINE"/work/cikti/aether-1.0-nebula.iso* cikti/
+          sudo cp "$ALPINE"/work/cikti/aether-1.1-nebula.iso* cikti/
           sudo chown -R "$(id -u)" cikti
           ls -la cikti
           {
             echo "### Aether ISO"
             echo '```'
-            cat cikti/aether-1.0-nebula.iso.sha256
+            cat cikti/aether-1.1-nebula.iso.sha256
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 

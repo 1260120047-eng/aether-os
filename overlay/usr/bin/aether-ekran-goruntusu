@@ -1,6 +1,12 @@
 #!/bin/sh
-# aether-ekran-goruntusu [--alan] — ekran görüntüsünü Resimler klasörüne kaydeder
-d=$(. "$HOME/.config/user-dirs.dirs" 2>/dev/null; echo "${XDG_PICTURES_DIR:-$HOME/Resimler}")
+# aether-ekran-goruntusu [--alan] — ekran görüntüsünü Resimler klasörüne kaydeder ve bildirim gösterir
+d=$([ -f "$HOME/.config/user-dirs.dirs" ] && . "$HOME/.config/user-dirs.dirs"; echo "${XDG_PICTURES_DIR:-$HOME/Resimler}")
 mkdir -p "$d"
 f="$d/ekran-$(date +%Y-%m-%d-%H%M%S).png"
-if [ "$1" = --alan ]; then scrot -s -f "$f"; else sleep 0.3; scrot "$f"; fi && aether-ses bildirim &
+if [ "$1" = --alan ]; then scrot -s -f "$f"; else sleep 0.3; scrot "$f"; fi || exit 1
+case "${LANG:-tr}" in en*) b="Screenshot saved" ;; *) b="Ekran görüntüsü kaydedildi" ;; esac
+if command -v notify-send >/dev/null; then
+  notify-send -a "Aether" -i "$f" "$b" "${f#$HOME/}"
+else
+  aether-ses bildirim &
+fi

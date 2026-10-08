@@ -6,8 +6,9 @@ case "$1" in
   basla)
     [ -f $W/disk.qcow2 ] || qemu-img create -f qcow2 $W/disk.qcow2 10G >/dev/null
     BOOT=d; [ "$2" = disk ] && BOOT=c
-    CD="-cdrom /work/cikti/aether-1.0-nebula.iso"; [ "$2" = disk ] && CD=""
+    CD="-cdrom ${ISO:-/work/cikti/aether-1.1-nebula.iso}"; [ "$2" = disk ] && CD=""
     EK=""; [ "$3" = uefi ] && EK="-bios /usr/share/OVMF/OVMF.fd"
+    [ -n "$SES" ] && EK="$EK -audiodev none,id=ses -device intel-hda -device hda-duplex,audiodev=ses"
     rm -f $W/seri.log
     qemu-system-x86_64 -m 2048 -smp 2 -cpu max -vga ${VGA:-std} $EK \
       -drive file=$W/disk.qcow2,if=virtio $CD -boot $BOOT \

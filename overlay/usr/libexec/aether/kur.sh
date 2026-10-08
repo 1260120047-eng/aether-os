@@ -99,7 +99,7 @@ p 93 "Önyükleyici kuruluyor|Installing boot loader"
 chroot "$H" grub-install --target=i386-pc --boot-directory=/boot "$DISK" >/dev/null 2>&1 || echo "(BIOS grub-install uyarı verdi)"
 chroot "$H" grub-install --target=x86_64-efi --efi-directory=/boot/efi --boot-directory=/boot --removable --no-nvram >/dev/null 2>&1 || echo "(UEFI grub-install uyarı verdi)"
 cat > "$H/boot/grub/grub.cfg" <<EOF
-# Aether 1.0 "Nebula"
+# Aether 1.1 "Nebula"
 set timeout=3
 set default=0
 insmod all_video
@@ -115,11 +115,11 @@ if loadfont /boot/grub/themes/aether/jetbrains-16.pf2; then
   terminal_output gfxterm
   set theme=/boot/grub/themes/aether/theme.txt
 fi
-menuentry "Aether 1.0 Nebula" --class aether {
+menuentry "Aether 1.1 Nebula" --class aether {
   linux /boot/vmlinuz-lts root=UUID=$KOK rootfstype=ext4 modules=sd-mod,usb-storage,ext4 quiet loglevel=3 splash vt.global_cursor_default=0 console=tty3 plymouth.ignore-serial-consoles
   initrd /boot/initramfs-lts
 }
-menuentry "Aether 1.0 Nebula ($( [ "$DIL" = en ] && echo 'safe graphics' || echo 'güvenli grafik' ))" --class aether {
+menuentry "Aether 1.1 Nebula ($( [ "$DIL" = en ] && echo 'safe graphics' || echo 'güvenli grafik' ))" --class aether {
   linux /boot/vmlinuz-lts root=UUID=$KOK rootfstype=ext4 modules=sd-mod,usb-storage,ext4 nomodeset
   initrd /boot/initramfs-lts
 }

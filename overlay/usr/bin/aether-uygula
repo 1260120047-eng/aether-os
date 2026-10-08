@@ -4,13 +4,9 @@ AYAR="$HOME/.config/aether/ayarlar"
 . /etc/aether/ayarlar; [ -f "$AYAR" ] && . "$AYAR"
 
 if [ "$TEMA" = koyu ]; then
-  GTK=Aether-Koyu; OB=Aether-Koyu; KOYU=1
-  BG='#14131c'; FG='#e4e2f0'
-  PAL='#1d1b29;#e06c75;#98c379;#e5c07b;#7aa2f7;#b39dff;#56b6c2;#c8c6d6;#4a4760;#ef8891;#b5e08f;#f0d197;#9bb8ff;#c9b8ff;#7fd1db;#ffffff'
+  GTK=Aether-Koyu; KOYU=1
 else
-  GTK=Aether; OB=Aether; KOYU=0
-  BG='#fbfbfd'; FG='#26223f'
-  PAL='#26223f;#c62828;#2e7d32;#a66b00;#1e5bd6;#5b4bd6;#00838f;#8a879c;#56526e;#e53935;#43a047;#c68a00;#3d7bff;#7c6ad6;#0097a7;#d8d6e4'
+  GTK=Aether; KOYU=0
 fi
 
 # GTK 3
@@ -34,47 +30,10 @@ Net/EnableEventSounds 0
 EOF
 pkill -HUP -x xsettingsd 2>/dev/null
 
-# Openbox
-mkdir -p "$HOME/.config/openbox"
-[ -f "$HOME/.config/openbox/rc.xml" ] || cp /etc/xdg/openbox/rc.xml "$HOME/.config/openbox/rc.xml"
-sed -i "s|<name>[^<]*</name><!--tema-->|<name>$OB</name><!--tema-->|" "$HOME/.config/openbox/rc.xml"
-pgrep -x openbox >/dev/null && openbox --reconfigure
+# Pencere yöneticisi (Yörünge temayı ayarlar dosyasından okur)
+pkill -HUP -x yorunge 2>/dev/null
 
-# Terminal
-mkdir -p "$HOME/.config/lxterminal"
-cat > "$HOME/.config/lxterminal/lxterminal.conf" <<EOF
-[general]
-fontname=JetBrains Mono 11
-selchars=-A-Za-z0-9,./?%&#:_
-scrollback=5000
-bgcolor=$BG
-fgcolor=$FG
-palette_color_0=$(echo $PAL | cut -d';' -f1)
-palette_color_1=$(echo $PAL | cut -d';' -f2)
-palette_color_2=$(echo $PAL | cut -d';' -f3)
-palette_color_3=$(echo $PAL | cut -d';' -f4)
-palette_color_4=$(echo $PAL | cut -d';' -f5)
-palette_color_5=$(echo $PAL | cut -d';' -f6)
-palette_color_6=$(echo $PAL | cut -d';' -f7)
-palette_color_7=$(echo $PAL | cut -d';' -f8)
-palette_color_8=$(echo $PAL | cut -d';' -f9)
-palette_color_9=$(echo $PAL | cut -d';' -f10)
-palette_color_10=$(echo $PAL | cut -d';' -f11)
-palette_color_11=$(echo $PAL | cut -d';' -f12)
-palette_color_12=$(echo $PAL | cut -d';' -f13)
-palette_color_13=$(echo $PAL | cut -d';' -f14)
-palette_color_14=$(echo $PAL | cut -d';' -f15)
-palette_color_15=$(echo $PAL | cut -d';' -f16)
-color_preset=Custom
-disallowbold=false
-cursorblinks=true
-cursorunderline=false
-hidescrollbar=true
-hidemenubar=true
-hidepointer=false
-geometry_columns=96
-geometry_rows=28
-EOF
+# Terminal: aether-terminal temayı ayarlar dosyasından kendisi okur
 
 # Duvar kağıdı ve klavye
 [ -n "$DISPLAY" ] && {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Aether 1.0 "Nebula" görsellerini üretir
+# Aether 1.1 "Nebula" görsellerini üretir
 import os, random, math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -61,7 +61,7 @@ def draw_logo_text(im, cy, size, sub=True, alpha=255):
     out = Image.alpha_composite(out, layer)
     if sub:
         d2 = ImageDraw.Draw(out)
-        f2 = font("Regular", max(12, size // 4)); t2 = "1.0  ·  N E B U L A"
+        f2 = font("Regular", max(12, size // 4)); t2 = "1.1  ·  N E B U L A"
         w2 = d2.textlength(t2, font=f2)
         d2.text(((W - w2) / 2, cy + size * 0.65), t2, font=f2, fill=(190, 170, 255, 220))
     return out.convert("RGB")
@@ -82,7 +82,7 @@ for i in range(14):  # ince geometrik çizgiler
     x0 = rng.randint(-400, 1920); dd.line([(x0, 1080), (x0 + 700, 0)], fill=(196, 190, 230), width=1)
 f = font("Light", 90); t = spaced("AETHER"); w = dd.textlength(t, font=f)
 dd.text(((W - w) / 2, 410), t, font=f, fill=(70, 60, 140))
-f2 = font("Regular", 22); t2 = "1.0  ·  N E B U L A"; w2 = dd.textlength(t2, font=f2)
+f2 = font("Regular", 22); t2 = "1.1  ·  N E B U L A"; w2 = dd.textlength(t2, font=f2)
 dd.text(((W - w2) / 2, 530), t2, font=f2, fill=(110, 100, 170))
 dim.save(mk(wp + "safak.png"), optimize=True)
 
@@ -101,7 +101,7 @@ sky(1280, 720, seed=7).save(mk(pt + "arkaplan.png"), optimize=True)
 lg = Image.new("RGBA", (900, 200), (0, 0, 0, 0)); ld = ImageDraw.Draw(lg)
 f = font("Light", 84); t = spaced("AETHER"); w = ld.textlength(t, font=f)
 ld.text(((900 - w) / 2, 30), t, font=f, fill=(255, 255, 255, 255))
-f2 = font("Regular", 22); t2 = "1.0  ·  N E B U L A"; w2 = ld.textlength(t2, font=f2)
+f2 = font("Regular", 22); t2 = "1.1  ·  N E B U L A"; w2 = ld.textlength(t2, font=f2)
 ld.text(((900 - w2) / 2, 150), t2, font=f2, fill=(190, 170, 255, 230))
 glow = lg.filter(ImageFilter.GaussianBlur(10))
 Image.alpha_composite(glow, lg).save(pt + "logo.png")

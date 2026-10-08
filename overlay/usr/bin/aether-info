@@ -38,7 +38,7 @@ bilgi=(
 "${M}$(t "Süre" "Uptime")${R}        ${sure}"
 "${M}$(t "Paketler" "Packages")${R}    ${paket} (apk)"
 "${M}$(t "Kabuk" "Shell")${R}       ${SHELL##*/}"
-"${M}$(t "Masaüstü" "Desktop")${R}    Openbox · Aether ${tema}"
+"${M}$(t "Masaüstü" "Desktop")${R}    Yörünge · Aether ${tema}"
 )
 [ -n "$ekran" ] && bilgi+=("${M}$(t "Ekran" "Display")${R}       ${ekran}")
 bilgi+=("${M}$(t "İşlemci" "CPU")${R}     ${cpu}")
@@ -47,7 +47,6 @@ bilgi+=(
 "${M}$(t "Bellek" "Memory")${R}      ${bel}"
 "${M}Disk (/)${R}    ${disk}"
 "${M}$(t "Mod" "Mode")${R}         ${mod}"
-"${M}$(t "Yapımcı" "Made by")${R}     Hot Zot"
 ""
 "$(for c in 0 1 2 3 4 5 6 7; do printf '\e[4%dm   ' $c; done)${R}"
 )

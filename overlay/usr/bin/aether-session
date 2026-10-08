@@ -28,6 +28,12 @@ XDG_PICTURES_DIR="\$HOME/$R"
 XDG_VIDEOS_DIR="\$HOME/$V"
 EOF
 
+# D-Bus oturum veriyolu: bildirimler ve uygulamalar için (X kapanınca o da kapanır)
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+  eval "$(dbus-launch --sh-syntax --exit-with-x11)"
+  export DBUS_SESSION_BUS_ADDRESS
+fi
+
 aether-uygula --oturum
 xsettingsd >/dev/null 2>&1 &
 aether-bosta >/dev/null 2>&1 &
@@ -39,4 +45,7 @@ elif [ "$KARSILAMA" = 1 ]; then
   (sleep 1; aether-hosgeldin) &
 fi
 
-exec dbus-launch --exit-with-session openbox
+# Görev çubuğu: çökerse yeniden başlat, oturum bitince dur
+( while :; do yorunge-panel; [ $? -ge 128 ] || break; sleep 1; done ) &
+
+exec yorunge

@@ -1,7 +1,8 @@
 /* Eclipse — Aether'in web tarayıcısı (WebKitGTK motoru üzerinde)
-   Aether 1.0 "Nebula" · Yapımcı: Hot Zot
+   Aether 1.1 "Nebula"
    Sekmeler, Aether ana sayfası, yer imleri, geçmiş, indirmeler, gizli pencere. */
 #include "aether.h"
+#include <glib/gstdio.h>
 #include <webkit2/webkit2.h>
 #include <time.h>
 
@@ -15,6 +16,82 @@ typedef struct {
 } Pencere;
 
 static WebKitWebContext *normal_baglam;
+
+/* ---------- reklam engelleyici: WebKit içerik filtresi (AdAway listesi) ---------- */
+#define REKLAM_LISTESI "/usr/share/aether/eclipse/reklam-alanlari.txt"
+static WebKitUserContentManager *icerik;      /* tüm sekmeler ortak kullanır */
+static WebKitUserContentFilter *reklam_filtresi;
+static WebKitUserContentFilterStore *filtre_deposu;
+static gboolean reklam_acik = TRUE;
+static int reklam_kural;
+
+static void reklam_uygula(void) {
+    if (!icerik) return;
+    webkit_user_content_manager_remove_all_filters(icerik);
+    if (reklam_acik && reklam_filtresi) webkit_user_content_manager_add_filter(icerik, reklam_filtresi);
+}
+
+static GBytes *reklam_json(void) {
+    char *metin = NULL;
+    if (!g_file_get_contents(REKLAM_LISTESI, &metin, NULL, NULL)) return NULL;
+    GString *j = g_string_new("[");
+    char **satir = g_strsplit(metin, "\n", -1);
+    reklam_kural = 0;
+    for (int i = 0; satir[i]; i++) {
+        char *a = g_strstrip(satir[i]);
+        if (!*a || *a == '#') continue;
+        GString *r = g_string_new(NULL);
+        for (char *c = a; *c; c++) {
+            if (*c == '.') g_string_append(r, "\\\\.");
+            else if (g_ascii_isalnum(*c) || *c == '-' || *c == '_') g_string_append_c(r, *c);
+        }
+        g_string_append_printf(j, "%s{\"trigger\":{\"url-filter\":\"^[^:]+://+([^:/]+\\\\.)?%s[:/]\",\"load-type\":[\"third-party\"]},\"action\":{\"type\":\"block\"}}",
+                               reklam_kural ? "," : "", r->str);
+        g_string_free(r, TRUE);
+        reklam_kural++;
+    }
+    /* görünen reklam kutularını gizle */
+    g_string_append(j, ",{\"trigger\":{\"url-filter\":\".*\"},\"action\":{\"type\":\"css-display-none\",\"selector\":"
+        "\"ins.adsbygoogle, .adsbygoogle, div[id^='div-gpt-ad'], iframe[id^='google_ads_iframe'], [id^='google_ads_'], .ad-banner, .advertisement\"}}]");
+    g_strfreev(satir); g_free(metin);
+    gsize n = j->len;
+    return g_bytes_new_take(g_string_free(j, FALSE), n);
+}
+
+static void reklam_kaydedildi(GObject *k, GAsyncResult *r, gpointer d) {
+    (void)d; GError *e = NULL;
+    reklam_filtresi = webkit_user_content_filter_store_save_finish(WEBKIT_USER_CONTENT_FILTER_STORE(k), r, &e);
+    if (e) { g_printerr("eclipse: reklam filtresi derlenemedi: %s\n", e->message); g_error_free(e); }
+    reklam_uygula();
+}
+
+static void reklam_yuklendi(GObject *k, GAsyncResult *r, gpointer kimlik) {
+    reklam_filtresi = webkit_user_content_filter_store_load_finish(WEBKIT_USER_CONTENT_FILTER_STORE(k), r, NULL);
+    if (reklam_filtresi) { reklam_uygula(); g_free(kimlik); return; }
+    /* ilk açılışta (ya da liste değiştiyse) listeyi derle ve sakla */
+    GBytes *b = reklam_json();
+    if (b) { webkit_user_content_filter_store_save(filtre_deposu, kimlik, b, NULL, reklam_kaydedildi, NULL); g_bytes_unref(b); }
+    g_free(kimlik);
+}
+
+static void reklam_kur(void) {
+    icerik = webkit_user_content_manager_new();
+    char *a = ae_ayar("ECLIPSE_REKLAM", "1"); reklam_acik = strcmp(a, "0") != 0; g_free(a);
+    GStatBuf st;
+    if (g_stat(REKLAM_LISTESI, &st) != 0) return;
+    char *yol = g_build_filename(g_get_user_cache_dir(), "aether", "eclipse", "filtreler", NULL);
+    filtre_deposu = webkit_user_content_filter_store_new(yol); g_free(yol);
+    /* kimlik liste değişince değişsin: eski derleme kullanılmasın */
+    char *kimlik = g_strdup_printf("reklam-%lld-%lld", (long long)st.st_size, (long long)st.st_mtime);
+    webkit_user_content_filter_store_load(filtre_deposu, kimlik, NULL, reklam_yuklendi, kimlik);
+}
+
+static void reklam_degistir(GtkCheckMenuItem *o, gpointer d) {
+    (void)d;
+    reklam_acik = gtk_check_menu_item_get_active(o);
+    ae_ayar_yaz("ECLIPSE_REKLAM", reklam_acik ? "1" : "0");
+    reklam_uygula();
+}
 static GList *pencereler;
 static char *yerimi_yolu, *gecmis_yolu, *indirme_dizini;
 
@@ -104,7 +181,7 @@ static char *ev_sayfasi(gboolean gizli) {
         "t();setInterval(t,1000);})();</script>");
     g_string_append(h, "<h1>E C L I P S E</h1>");
     g_string_append_printf(h, "<div class=alt>%s</div>", gizli ? T("GİZLİ PENCERE · GEÇMİŞ KAYDEDİLMEZ", "PRIVATE WINDOW · NO HISTORY")
-                                                              : "AETHER 1.0 · NEBULA");
+                                                              : "AETHER 1.1 · NEBULA");
     g_string_append_printf(h, "<form onsubmit=\"var q=document.getElementById('q').value.trim();if(q)location.href='https://duckduckgo.com/?q='+encodeURIComponent(q);return false\">"
         "<input id=q autofocus placeholder=\"%s\"><button>%s</button></form>",
         T("Web'de ara veya adres yaz…", "Search the web or type an address…"), T("Ara", "Search"));
@@ -124,7 +201,7 @@ static char *ev_sayfasi(gboolean gizli) {
         g_strfreev(s); g_string_append(h, "</div>");
     }
     g_free(c);
-    g_string_append_printf(h, "<div class=alt-not>%s · <a style=color:#b6a8ff href=aether://gecmis>%s</a> · Hot Zot</div>",
+    g_string_append_printf(h, "<div class=alt-not>%s · <a style=color:#b6a8ff href=aether://gecmis>%s</a></div>",
         T("Ctrl+T yeni sekme · Ctrl+D yer imi · Ctrl+Shift+N gizli pencere", "Ctrl+T new tab · Ctrl+D bookmark · Ctrl+Shift+N private window"),
         T("Geçmiş", "History"));
     g_string_append(h, "</div></body></html>");
@@ -248,7 +325,7 @@ static void tam_ekran(WebKitWebView *w, gpointer gir) {
 }
 
 static WebKitWebView *sekme_ac(Pencere *p, const char *url, gboolean one_al) {
-    WebKitWebView *w = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(p->baglam));
+    WebKitWebView *w = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "web-context", p->baglam, "user-content-manager", icerik, NULL));
     WebKitSettings *s = webkit_web_view_get_settings(w);
     webkit_settings_set_enable_javascript(s, TRUE);
     webkit_settings_set_enable_developer_extras(s, TRUE);
@@ -363,9 +440,9 @@ static void yakinlastir(Pencere *p, double k) {
 static void hakkinda(GtkWidget *x, Pencere *p) {
     GtkWidget *d = gtk_message_dialog_new(GTK_WINDOW(p->pencere), GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "Eclipse");
     char m[512];
-    snprintf(m, sizeof m, T("Aether'in web tarayıcısı.\nYapımcı: %s\n\nSayfa motoru: WebKitGTK %u.%u.%u (JavaScript destekli)",
-                            "Aether's web browser.\nMade by %s\n\nPage engine: WebKitGTK %u.%u.%u (with JavaScript)"),
-             AETHER_YAPIMCI, webkit_get_major_version(), webkit_get_minor_version(), webkit_get_micro_version());
+    snprintf(m, sizeof m, T("Aether'in web tarayıcısı.\n\nSayfa motoru: WebKitGTK %u.%u.%u (JavaScript destekli)",
+                            "Aether's web browser.\n\nPage engine: WebKitGTK %u.%u.%u (with JavaScript)"),
+             webkit_get_major_version(), webkit_get_minor_version(), webkit_get_micro_version());
     gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(d), "%s", m);
     gtk_dialog_run(GTK_DIALOG(d)); gtk_widget_destroy(d);
 }
@@ -393,6 +470,12 @@ static void menu_goster(GtkButton *b, Pencere *p) {
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(ym), alt); gtk_menu_shell_append(GTK_MENU_SHELL(m), ym);
     OGE(T("Geçmiş                  Ctrl+H", "History                 Ctrl+H"), gecmis_ac);
     gtk_menu_shell_append(GTK_MENU_SHELL(m), gtk_separator_menu_item_new());
+    {
+        GtkWidget *o = gtk_check_menu_item_new_with_label(T("Reklam engelleyici", "Ad blocker"));
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(o), reklam_acik);
+        g_signal_connect(o, "toggled", G_CALLBACK(reklam_degistir), NULL);
+        gtk_menu_shell_append(GTK_MENU_SHELL(m), o);
+    }
     OGE(T("Eclipse hakkında", "About Eclipse"), hakkinda);
     gtk_widget_show_all(m);
     gtk_menu_popup_at_widget(GTK_MENU(m), GTK_WIDGET(b), GDK_GRAVITY_SOUTH_EAST, GDK_GRAVITY_NORTH_EAST, NULL);
@@ -568,6 +651,7 @@ int main(int argc, char **argv) {
     const char *ind = g_get_user_special_dir(G_USER_DIRECTORY_DOWNLOAD);
     indirme_dizini = g_strdup(ind ? ind : g_get_home_dir());
 
+    reklam_kur();
     normal_baglam = baglam_kur(FALSE);
     gboolean gizli = FALSE; const char *url = NULL;
     for (int i = 1; i < argc; i++) {

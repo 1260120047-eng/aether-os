@@ -54,7 +54,7 @@ static GtkWidget *dil_sayfasi(void) {
     gtk_box_pack_start(GTK_BOX(ust), ae_logo(80), FALSE, FALSE, 0);
     GtkWidget *b = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_box_pack_start(GTK_BOX(b), ae_etiket("A E T H E R", "ae-baslik"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(b), ae_etiket("1.0 · Nebula — Kurulum / Setup", "ae-alt"), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(b), ae_etiket("1.1 · Nebula — Kurulum / Setup", "ae-alt"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ust), b, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(k), ust, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(k), ae_etiket("Dilini seç  ·  Choose your language", NULL), FALSE, FALSE, 8);

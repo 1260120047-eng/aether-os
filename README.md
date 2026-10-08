@@ -2,9 +2,9 @@
 
 [![ISO](https://github.com/1260120047-eng/aether-os/actions/workflows/iso.yml/badge.svg)](https://github.com/1260120047-eng/aether-os/actions/workflows/iso.yml)
 
-Aether, merak ettiğim için yaptığım küçük bir Linux dağıtımı. Alpine Linux üzerine kurulu, ISO dosyası 370 MB civarında, açılışta RAM'e yükleniyor ve beğenirsen diske kurulabiliyor. Arayüz Türkçe (İngilizce de var).
+Aether, merak ettiğim için yaptığım küçük bir Linux dağıtımı. Alpine Linux üzerine kurulu, ISO dosyası 500 MB civarında, açılışta RAM'e yükleniyor ve beğenirsen diske kurulabiliyor. Arayüz Türkçe (İngilizce de var).
 
-Bu depo, **Aether 1.0 "Nebula"** sürümünün kaynak kodları. Hazır ISO'yu indirmek için: **[aether-os.dev](https://aether-os.dev)**
+Bu depo, **Aether 1.1 "Nebula"** sürümünün kaynak kodları. Hazır ISO'yu indirmek için: **[aether-os.dev](https://aether-os.dev)**
 
 ## İçindekiler
 
@@ -12,8 +12,8 @@ Bu depo, **Aether 1.0 "Nebula"** sürümünün kaynak kodları. Hazır ISO'yu in
 betikler/     ISO'yu derleyen kabuk betikleri
 overlay/      Kök sisteme olduğu gibi kopyalanan dosyalar
               (yapılandırmalar, temalar, simgeler, aether-* betikleri, açılış ekranı, GRUB teması)
-src/apps/     Aether'e özel uygulamalar (C + GTK 3)
-src/initramfs/init   Canlı açılış: ISO'yu bulur, sistemi RAM'e kopyalar, overlayfs kurar
+src/apps/     Aether'e özel uygulamalar (C; GTK 3 ve Xlib)
+src/initramfs/       Canlı açılış: ISO'yu bulur, overlayfs kurar; toram.c sistemi arka planda RAM'e kopyalar
 src/art/      Duvar kağıdı, simgeler ve sesleri üreten Python betikleri
 windows/      Eclipse tarayıcının Windows sürümü (Win32 + WebView2)
 ```
@@ -22,11 +22,16 @@ windows/      Eclipse tarayıcının Windows sürümü (Win32 + WebView2)
 
 | Dosya | Program |
 |---|---|
+| `yorunge.c` | Yörünge, Aether'in pencere yöneticisi (Xlib, EWMH) |
+| `panel.c` | Görev çubuğu: başlat menüsü, pencereler, ağ, ses, saat (GTK 3 + libwnck) |
+| `bildirim.c` | Bildirim sunucusu (org.freedesktop.Notifications) |
+| `terminal.c` | Aether Terminal, sekmeli (VTE) |
+| `ag.h` | Wi-Fi için iwd D-Bus yardımcıları |
 | `kurulum.c` | Diske kurulum sihirbazı (dil, klavye, hesap, disk) |
-| `ayarlar.c` | Ayarlar: tema, dil, klavye, duvar kağıdı, eklentiler |
+| `ayarlar.c` | Ayarlar: tema, dil, klavye, duvar kağıdı, Wi-Fi, sürücüler, eklentiler |
 | `hosgeldin.c` | Karşılama penceresi |
 | `hakkinda.c` | Aether Hakkında |
-| `eclipse.c` | Eclipse web tarayıcı (WebKitGTK) |
+| `eclipse.c` | Eclipse web tarayıcı (WebKitGTK), reklam engelleyicili |
 | `oyunlar.c`, `mayin.c` | Oyun başlatıcı ve Mayın Tarlası |
 | `yildizlar.c` | Yıldız alanı ekran koruyucusu (SDL2) |
 
@@ -52,7 +57,7 @@ sh /s/webkit.sh     # Eclipse için WebKitGTK
 sh /s/build.sh      # uygulamaları derler ve ISO'yu üretir
 ```
 
-ISO `/work/cikti/aether-1.0-nebula.iso` olarak çıkar. QEMU'da denemek için:
+ISO `/work/cikti/aether-1.1-nebula.iso` olarak çıkar. QEMU'da denemek için:
 
 ```sh
 sh /s/vm.sh basla cd
@@ -81,7 +86,7 @@ Hata bulduysan ya da bir fikrin varsa [Issues](https://github.com/1260120047-eng
 
 Aether'in kendi kodları **GNU GPL 3.0** ile lisanslıdır, ayrıntılar [LICENSE](LICENSE) dosyasında. Kısaca: kullanabilir, değiştirebilir ve dağıtabilirsin; değiştirdiğin sürümü dağıtırsan onun kaynak kodunu da aynı lisansla paylaşman gerekir.
 
-ISO'nun içindeki Alpine paketleri (Linux çekirdeği, Openbox, GTK, WebKit, Mesa ve diğerleri) kendi lisanslarıyla gelir. Yazı tipi JetBrains Mono, SIL Open Font License ile lisanslıdır.
+ISO'nun içindeki Alpine paketleri (Linux çekirdeği, GTK, WebKit, VTE, Mesa ve diğerleri) kendi lisanslarıyla gelir. Yazı tipi JetBrains Mono, SIL Open Font License ile lisanslıdır. Eclipse'in reklam engelleyici listesi [AdAway](https://adaway.org) hosts listesinden alındı (CC BY 3.0).
 
 ---
 

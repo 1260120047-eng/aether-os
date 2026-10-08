@@ -1,4 +1,4 @@
-# Aether 1.0 "Nebula" GRUB teması — Yapımcı: Hot Zot
+# Aether 1.1 "Nebula" GRUB teması
 title-text: ""
 desktop-image: "arkaplan.png"
 desktop-color: "#05081a"
@@ -27,7 +27,7 @@ terminal-font: "JetBrains Mono Regular 16"
   left = 0
   width = 100%
   align = "center"
-  text = "↑ ↓ seç / select   ·   Enter başlat / boot   ·   Yapımcı: Hot Zot"
+  text = "↑ ↓ seç / select   ·   Enter başlat / boot"
   color = "#6f66a3"
   font = "JetBrains Mono Regular 12"
 }

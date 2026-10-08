@@ -13,7 +13,7 @@ sessiz=0; grep -qw quiet /proc/cmdline && sessiz=1
 yaz() { [ $sessiz = 1 ] || echo "  [aether] $*"; }
 kurtar() { echo; echo "  [aether] HATA: $*"; echo "  Kurtarma kabuğu açılıyor (çıkmak için: exit)"; setsid cttyhack sh; }
 
-ETIKET=AETHER_1_0; TORAM=1
+ETIKET=AETHER_1_1; TORAM=1
 for a in $(cat /proc/cmdline); do
   case "$a" in
     aether.etiket=*) ETIKET="${a#*=}" ;;
@@ -22,7 +22,7 @@ for a in $(cat /proc/cmdline); do
   esac
 done
 
-yaz "Aether 1.0 Nebula başlıyor…"
+yaz "Aether 1.1 Nebula başlıyor…"
 # sessiz açılışta da kullanıcı bir şey görsün (konsol tty3'e yönlendirilmiş olabilir)
 ekran() { [ -c /dev/tty1 ] && printf "\033[2J\033[H\n\n    A E T H E R   1.0 \"Nebula\"\n\n    %s\n" "$*" > /dev/tty1 2>/dev/null; }
 ekran "Aether yukleniyor, lutfen bekle...  /  Loading, please wait..."
@@ -58,17 +58,21 @@ kd=$(basename "$bulundu"); case "$kd" in nvme*|mmcblk*) kd="${kd%p[0-9]*}" ;; sr
 echo "$kd" > /run/aether/kaynak-disk
 
 SFS=/ortam/aether/rootfs.sfs
+# Sistem doğrudan ortamdan açılır; RAM'e kopyalama arka planda sürer ve bitince
+# aether-toram çalışan sistemi fark ettirmeden RAM'deki kopyaya geçirir.
+LOOP=$(losetup -f)
+losetup -r "$LOOP" "$SFS" || kurtar "loop aygıtı kurulamadı"
+mount -t squashfs -o ro "$LOOP" /sfs || kurtar "rootfs.sfs bağlanamadı"
 if [ $TORAM = 1 ]; then
   bos=$(awk '/MemAvailable/{print $2}' /proc/meminfo)
   boy=$(( $(stat -c %s $SFS) / 1024 ))
   if [ "$bos" -gt $((boy * 2)) ]; then
-    yaz "Sistem RAM'e yükleniyor…"; ekran "Sistem RAM'e kopyalaniyor (1 dakika surebilir)...  /  Copying to RAM..."
-    cp $SFS /run/aether/rootfs.sfs && SFS=/run/aether/rootfs.sfs
+    yaz "Sistem arka planda RAM'e kopyalanıyor"
+    /bin/aether-toram "$LOOP" "$SFS" /run/aether || yaz "RAM'e kopyalama başlatılamadı"
   else
     yaz "RAM yetersiz, ortamdan çalışılacak."
   fi
 fi
-mount -t squashfs -o ro,loop "$SFS" /sfs || kurtar "rootfs.sfs bağlanamadı"
 mount -t tmpfs -o mode=0755 tmpfs /rw
 mkdir -p /rw/ust /rw/is
 mount -t overlay overlay -o lowerdir=/sfs,upperdir=/rw/ust,workdir=/rw/is /yeni || kurtar "overlay kurulamadı"
@@ -77,7 +81,7 @@ mount -t overlay overlay -o lowerdir=/sfs,upperdir=/rw/ust,workdir=/rw/is /yeni 
 mkdir -p /yeni/run
 mount --move /run /yeni/run
 mkdir -p /yeni/run/aether/ortam /yeni/run/aether/sfs /yeni/run/aether/rw
-if [ "$SFS" = /run/aether/rootfs.sfs ]; then umount /ortam 2>/dev/null; else mount --move /ortam /yeni/run/aether/ortam; fi
+mount --move /ortam /yeni/run/aether/ortam
 mount --move /sfs /yeni/run/aether/sfs
 mount --move /rw /yeni/run/aether/rw
 # canlı sistemde fstab boş olsun

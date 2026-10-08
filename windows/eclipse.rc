@@ -2,10 +2,11 @@
 #include "kaynak.h"
 KAYNAK_SIMGE ICON "eclipse.ico"
 KAYNAK_ARKAPLAN RCDATA "arkaplan.png"
+KAYNAK_REKLAM RCDATA "reklam-alanlari.txt"
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "eclipse.manifest"
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,0
-PRODUCTVERSION 1,0,0,0
+FILEVERSION 1,1,0,0
+PRODUCTVERSION 1,1,0,0
 FILEOS 0x40004
 FILETYPE 0x1
 BEGIN
@@ -13,12 +14,12 @@ BEGIN
   BEGIN
     BLOCK "041F04B0"
     BEGIN
-      VALUE "CompanyName", "Hot Zot"
+      VALUE "CompanyName", "Aether"
       VALUE "FileDescription", "Eclipse - Aether web tarayicisi"
-      VALUE "FileVersion", "1.0"
-      VALUE "ProductName", "Eclipse (Aether 1.0 Nebula)"
-      VALUE "ProductVersion", "1.0"
-      VALUE "LegalCopyright", "Hot Zot"
+      VALUE "FileVersion", "1.1"
+      VALUE "ProductName", "Eclipse (Aether 1.1 Nebula)"
+      VALUE "ProductVersion", "1.1"
+      VALUE "LegalCopyright", "Aether - GPL-3.0"
     END
   END
   BLOCK "VarFileInfo"

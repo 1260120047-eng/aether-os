@@ -1,4 +1,4 @@
-/* Aether 1.0 "Nebula" — ortak yardımcılar (Yapımcı: Hot Zot) */
+/* Aether 1.1 "Nebula" — ortak yardımcılar */
 #ifndef AETHER_H
 #define AETHER_H
 #include <gtk/gtk.h>
@@ -7,9 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#define AETHER_SURUM   "1.0"
+#define AETHER_SURUM   "1.1"
 #define AETHER_KODADI  "Nebula"
-#define AETHER_YAPIMCI "Hot Zot"
+#define AETHER_YAPIMCI "Hot Zot"   /* yalnızca Aether Hakkında penceresinde gösterilir */
 
 /* Dil: kurulumda çalışma anında değişebilir */
 static int ae_dil_zorla = -1;   /* -1: LANG'e bak, 0: tr, 1: en */

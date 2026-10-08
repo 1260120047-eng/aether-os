@@ -63,11 +63,11 @@ int main(int argc, char **argv) {
     satir(g, i++, T("Bellek", "Memory"), ram);
     satir(g, i++, "Disk", disk);
     satir(g, i++, T("Çalışma süresi", "Uptime"), sure);
-    satir(g, i++, T("Masaüstü", "Desktop"), "Openbox · Aether");
+    satir(g, i++, T("Masaüstü", "Desktop"), "Yörünge · Aether");
     satir(g, i++, T("Mod", "Mode"), ae_canli() ? T("Canlı (RAM)", "Live (RAM)") : T("Kurulu", "Installed"));
     gtk_box_pack_start(GTK_BOX(k), g, FALSE, FALSE, 0);
-    GtkWidget *n = gtk_label_new(T("Aether, özgür yazılımlar üzerine kurulmuştur.\nLinux, Alpine, Openbox, GTK ve Mesa topluluklarına teşekkürler.",
-                                   "Aether is built on free software.\nThanks to the Linux, Alpine, Openbox, GTK and Mesa communities."));
+    GtkWidget *n = gtk_label_new(T("Aether, özgür yazılımlar üzerine kurulmuştur.\nLinux, Alpine, GTK ve Mesa topluluklarına teşekkürler.",
+                                   "Aether is built on free software.\nThanks to the Linux, Alpine, GTK and Mesa communities."));
     gtk_label_set_justify(GTK_LABEL(n), GTK_JUSTIFY_CENTER);
     gtk_style_context_add_class(gtk_widget_get_style_context(n), "ae-alt");
     gtk_box_pack_start(GTK_BOX(k), n, FALSE, FALSE, 10);

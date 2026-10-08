@@ -1,0 +1,117 @@
+#!/bin/sh
+# aether-surucu — donanımı tanır, sürücü durumunu gösterir, eksik firmware'i kurar
+#   aether-surucu tara            her aygıt için: tür|üretici|sürücü|durum|paket
+#   aether-surucu kur PAKET...    firmware paketlerini kurar (yönetici yetkisiyle)
+# durum: tamam (çalışıyor) · eksik (firmware gerekli) · oneri (çalışıyor, ek firmware önerilir)
+#        yuklenemedi (sürücü var ama başlamadı) · yok (sürücü bulunamadı)
+
+# sürücü modülü → gereken firmware paketi
+paket_bul() {
+  case "$1" in
+    amdgpu) echo linux-firmware-amdgpu ;;
+    radeon) echo linux-firmware-radeon ;;
+    nouveau) echo linux-firmware-nvidia ;;
+    i915) echo linux-firmware-i915 ;;
+    xe) echo linux-firmware-xe ;;
+    ath10k_*) echo linux-firmware-ath10k ;;
+    ath11k_*) echo linux-firmware-ath11k ;;
+    ath12k*) echo linux-firmware-ath12k ;;
+    ath6kl_*) echo linux-firmware-ath6k ;;
+    ath9k_htc) echo linux-firmware-ath9k_htc ;;
+    mt7*|mt76*) echo linux-firmware-mediatek ;;
+    brcmfmac) echo "linux-firmware-brcm linux-firmware-cypress" ;;
+    rtw88_*) echo linux-firmware-rtw88 ;;
+    rtw89_*) echo linux-firmware-rtw89 ;;
+    rtl8*|rtlwifi*|rtl_*) echo linux-firmware-rtlwifi ;;
+    r8169) echo linux-firmware-rtl_nic ;;
+    bnx2|bnx2x) echo "linux-firmware-$1" ;;
+    snd_sof*|snd_soc_avs|snd_soc_skl*) echo sof-firmware ;;
+    *) return 1 ;;
+  esac
+}
+
+# paketin kurulu sayılması: Intel Wi-Fi ve bazı Wi-Fi firmware'leri ISO'ya parça parça gömülü
+kurulu() {
+  for p in $1; do
+    apk info -e "$p" >/dev/null 2>&1 && continue
+    [ -f "/usr/share/aether/firmware/$p" ] && continue
+    return 1
+  done
+  return 0
+}
+
+sinif_adi() {
+  case "$1" in
+    0x0300*|0x0301*|0x0302*|0x0380*) echo gpu ;;
+    0x0280*|0x0d*) echo wifi ;;
+    0x0200*) echo ethernet ;;
+    0x0401*|0x0403*|0x0480*) echo ses ;;
+    *) return 1 ;;
+  esac
+}
+
+uretici_adi() {
+  case "$1" in
+    0x8086) echo Intel ;; 0x10de) echo NVIDIA ;; 0x1002|0x1022) echo AMD ;; 0x10ec|0x0bda) echo Realtek ;;
+    0x14e4) echo Broadcom ;; 0x168c|0x17cb) echo Qualcomm ;; 0x14c3|0x0e8d) echo MediaTek ;;
+    0x1af4|0x1b36|0x1234) echo QEMU ;; 0x80ee) echo VirtualBox ;; 0x15ad) echo VMware ;; 0x1414) echo Microsoft ;;
+    0x1969) echo "Qualcomm Atheros" ;; 0x11ab) echo Marvell ;; 0x1912) echo Renesas ;;
+    *) echo "$1" ;;
+  esac
+}
+
+aygit_yaz() {   # tür üretici modalias bağlı-sürücü
+  tur=$1; ur=$2; ma=$3; bagli=$4
+  aday=$(modprobe -R "$ma" 2>/dev/null | head -1)
+  mod=${bagli:-$aday}
+  paket=$(paket_bul "$mod" 2>/dev/null) || paket=""
+  if [ -n "$bagli" ]; then
+    if [ -n "$paket" ] && ! kurulu "$paket"; then durum=oneri; else durum=tamam; fi
+  elif [ -n "$aday" ]; then
+    if [ -n "$paket" ] && ! kurulu "$paket"; then durum=eksik; else durum=yuklenemedi; fi
+  else
+    durum=yok
+  fi
+  echo "$tur|$ur|${mod:--}|$durum|$paket"
+}
+
+tara() {
+  for d in /sys/bus/pci/devices/*; do
+    [ -f "$d/class" ] || continue
+    tur=$(sinif_adi "$(cat "$d/class")") || continue
+    s=""; [ -e "$d/driver" ] && s=$(basename "$(readlink "$d/driver")")
+    aygit_yaz "$tur" "$(uretici_adi "$(cat "$d/vendor")")" "$(cat "$d/modalias")" "$s"
+  done
+  # USB Wi-Fi çubukları
+  for d in /sys/bus/usb/devices/*:1.0; do
+    [ -f "$d/modalias" ] || continue
+    ma=$(cat "$d/modalias")
+    aday=$(modprobe -R "$ma" 2>/dev/null | head -1)
+    case "$aday" in mt7*|mt76*|rtw88_*|rtw89_*|rtl8*|ath9k_htc|ath6kl_usb|ath10k_usb|brcmfmac|carl9170|ar5523|rt2800usb|rt73usb|mwifiex_usb) ;; *) continue ;; esac
+    s=""; [ -e "$d/driver" ] && s=$(basename "$(readlink "$d/driver")")
+    v=$(cat "$d/../idVendor" 2>/dev/null)
+    aygit_yaz wifi "$(uretici_adi "0x$v")" "$ma" "$s"
+  done
+}
+
+case "$1" in
+  tara) tara ;;
+  kur)
+    shift
+    [ $# -gt 0 ] || { echo "Kullanım: aether-surucu kur PAKET..."; exit 1; }
+    for p in "$@"; do
+      case "$p" in linux-firmware-*|sof-firmware) ;; *) echo "İzin verilmeyen paket: $p"; exit 2 ;; esac
+    done
+    [ "$(id -u)" = 0 ] || exec doas "$0" kur "$@"
+    echo "› apk add $*"
+    apk update -q && apk add --no-progress "$@" || exit 1
+    # firmware'i bekleyen sürücüleri yeniden yükle
+    for d in /sys/bus/pci/devices/*; do
+      [ -e "$d/driver" ] && continue
+      m=$(modprobe -R "$(cat "$d/modalias" 2>/dev/null)" 2>/dev/null | head -1)
+      [ -n "$m" ] && { echo "› modprobe $m"; modprobe -r "$m" 2>/dev/null; modprobe "$m" 2>/dev/null; }
+    done
+    echo
+    echo "Bazı sürücülerin tam çalışması için bilgisayarı yeniden başlatman gerekebilir." ;;
+  *) echo "Kullanım: aether-surucu tara | kur PAKET..."; exit 1 ;;
+esac

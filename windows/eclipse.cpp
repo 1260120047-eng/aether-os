@@ -1,5 +1,5 @@
 // Eclipse — Aether'in web tarayıcısı, Windows sürümü
-// Aether 1.0 "Nebula" · Yapımcı: Hot Zot
+// Aether 1.1 "Nebula"
 // Arayüz: Win32 · Sayfa motoru: Microsoft Edge WebView2 (Windows 10/11'de yerleşik)
 #ifndef UNICODE
 #define UNICODE
@@ -23,6 +23,7 @@
 #include <functional>
 #include <algorithm>
 #include <ctime>
+#include <unordered_set>
 #include "WebView2.h"
 #include "iids.h"
 #include "kaynak.h"
@@ -152,7 +153,7 @@ static wstring ev_sayfasi(bool gizli) {
          L"document.getElementById('tarih').textContent=d.getDate()+' '+AY[d.getMonth()]+' '+d.getFullYear()+' · '+GUN[d.getDay()];}"
          L"t();setInterval(t,1000);})();</script>";
     h += L"<h1>E C L I P S E</h1><div class=alt>";
-    h += gizli ? T("GİZLİ PENCERE · GEÇMİŞ KAYDEDİLMEZ", "PRIVATE WINDOW · NO HISTORY") : L"AETHER 1.0 · NEBULA · WINDOWS";
+    h += gizli ? T("GİZLİ PENCERE · GEÇMİŞ KAYDEDİLMEZ", "PRIVATE WINDOW · NO HISTORY") : L"AETHER 1.1 · NEBULA · WINDOWS";
     h += L"</div><form onsubmit=\"var q=document.getElementById('q').value.trim();if(q)location.href='https://duckduckgo.com/?q='+encodeURIComponent(q);return false\">"
          L"<input id=q autofocus placeholder=\"";
     h += T("Web'de ara veya adres yaz…", "Search the web or type an address…");
@@ -165,7 +166,7 @@ static wstring ev_sayfasi(bool gizli) {
     if (!y.empty()) { h += L"<h2>"; h += T("YER İMLERİ", "BOOKMARKS"); h += L"</h2><div class=kutular>"; for (auto &b : y) h += kutu(b.first, b.second); h += L"</div>"; }
     h += L"<div class=alt-not>";
     h += T("Ctrl+T yeni sekme · Ctrl+D yer imi · Ctrl+Shift+N gizli pencere", "Ctrl+T new tab · Ctrl+D bookmark · Ctrl+Shift+N private window");
-    h += L" · <a href=/gecmis>"; h += T("Geçmiş", "History"); h += L"</a> · Hot Zot</div></div></body></html>";
+    h += L" · <a href=/gecmis>"; h += T("Geçmiş", "History"); h += L"</a></div></div></body></html>";
     return h;
 }
 static wstring gecmis_sayfasi() {
@@ -188,7 +189,7 @@ static wstring gecmis_sayfasi() {
 
 // ---------------------------------------------------------------- pencere ve sekmeler
 enum { ID_GERI = 101, ID_ILERI, ID_YENILE, ID_EV, ID_ADRES, ID_YILDIZ, ID_INDIR, ID_YENI, ID_MENU, ID_KAPAT, ID_SEKMELER,
-       M_YENI = 300, M_GIZLI, M_GECMIS, M_INDIRMELER, M_HAKKINDA, M_YERIMI = 400 };
+       M_YENI = 300, M_GIZLI, M_GECMIS, M_INDIRMELER, M_HAKKINDA, M_REKLAM, M_YERIMI = 400 };
 static const wchar_t *G_GERI = L"", *G_ILERI = L"", *G_YENILE = L"", *G_DUR = L"", *G_EV = L"",
                      *G_YILDIZ = L"", *G_YILDIZ_DOLU = L"", *G_INDIR = L"", *G_YENI = L"", *G_MENU = L"", *G_KAPAT = L"";
 
@@ -208,6 +209,54 @@ struct Pencere {
     RECT eski{}; LONG eski_stil = 0;
 };
 static ICoreWebView2Environment *ortam;
+
+// ---------- reklam engelleyici (AdAway listesi, CC BY 3.0) ----------
+static std::unordered_set<std::string> reklam_alanlari;
+static bool reklam_acik = true;
+static wstring ayar_yolu;
+
+static void reklam_yukle() {
+    HRSRC k = FindResourceW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(KAYNAK_REKLAM), RT_RCDATA);
+    if (!k) return;
+    HGLOBAL g = LoadResource(GetModuleHandleW(nullptr), k);
+    std::string t((const char *)LockResource(g), SizeofResource(GetModuleHandleW(nullptr), k));
+    size_t b = 0;
+    while (b < t.size()) {
+        size_t e = t.find('\n', b); if (e == std::string::npos) e = t.size();
+        std::string sat = t.substr(b, e - b);
+        while (!sat.empty() && (sat.back() == '\r' || sat.back() == ' ')) sat.pop_back();
+        if (!sat.empty() && sat[0] != '#') reklam_alanlari.insert(sat);
+        b = e + 1;
+    }
+}
+
+static std::string ana_bilgisayar(const wstring &uri) {
+    size_t a = uri.find(L"://"); if (a == wstring::npos) return "";
+    a += 3;
+    size_t e = uri.find_first_of(L"/:?#", a);
+    std::string h;
+    for (size_t i = a; i < (e == wstring::npos ? uri.size() : e); i++) h += (char)towlower(uri[i]);
+    size_t at = h.rfind('@'); if (at != std::string::npos) h = h.substr(at + 1);
+    return h;
+}
+
+// alan adı ya da üst alan adlarından biri listede mi? (ads.example.com → example.com)
+static bool reklam_mi(const std::string &h) {
+    for (size_t i = 0; i != std::string::npos; ) {
+        if (reklam_alanlari.count(h.substr(i))) return true;
+        i = h.find('.', i); if (i != std::string::npos) i++;
+    }
+    return false;
+}
+
+static bool ayni_site(const std::string &a, const std::string &b) {
+    if (a.empty() || b.empty()) return false;
+    auto son2 = [](const std::string &h) {
+        size_t n = h.rfind('.'); if (n == std::string::npos || n == 0) return h;
+        size_t m = h.rfind('.', n - 1); return m == std::string::npos ? h : h.substr(m + 1);
+    };
+    return son2(a) == son2(b);
+}
 static HFONT yazi_simge, yazi_metin;
 static HINSTANCE uyg;
 static int pencere_sayisi = 0;
@@ -296,7 +345,7 @@ static void yildiz(Pencere *p) {
 static void hakkinda(Pencere *p) {
     wstring surum = L"?"; LPWSTR v = nullptr;
     if (SUCCEEDED(GetAvailableCoreWebView2BrowserVersionString(nullptr, &v))) surum = al(v);
-    wstring m = wstring(T("Aether'in web tarayıcısı — Windows sürümü\nYapımcı: Hot Zot\n\nSayfa motoru: Microsoft Edge WebView2 ", "Aether's web browser — Windows edition\nMade by Hot Zot\n\nPage engine: Microsoft Edge WebView2 ")) + surum;
+    wstring m = wstring(T("Aether'in web tarayıcısı — Windows sürümü\n\nSayfa motoru: Microsoft Edge WebView2 ", "Aether's web browser — Windows edition\n\nPage engine: Microsoft Edge WebView2 ")) + surum;
     MessageBoxW(p->hwnd, m.c_str(), L"Eclipse", MB_OK | MB_ICONINFORMATION);
 }
 static void indirmeler(Pencere *p) {
@@ -316,6 +365,7 @@ static void menu_goster(Pencere *p) {
     AppendMenuW(m, MF_STRING, M_GECMIS, T("Geçmiş\tCtrl+H", "History\tCtrl+H"));
     AppendMenuW(m, MF_STRING, M_INDIRMELER, T("İndirmeler\tCtrl+J", "Downloads\tCtrl+J"));
     AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(m, MF_STRING | (reklam_acik ? MF_CHECKED : 0), M_REKLAM, T("Reklam engelleyici", "Ad blocker"));
     AppendMenuW(m, MF_STRING, M_HAKKINDA, T("Eclipse hakkında", "About Eclipse"));
     RECT r; GetWindowRect(p->menu, &r);
     int c = TrackPopupMenu(m, TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_TOPALIGN, r.right, r.bottom, 0, p->hwnd, nullptr);
@@ -325,6 +375,11 @@ static void menu_goster(Pencere *p) {
     else if (c == M_GECMIS) sekme_ac(p, L"https://aether.local/gecmis");
     else if (c == M_INDIRMELER) indirmeler(p);
     else if (c == M_HAKKINDA) hakkinda(p);
+    else if (c == M_REKLAM) {
+        reklam_acik = !reklam_acik;
+        dosya_yaz(ayar_yolu, reklam_acik ? "reklam=1\n" : "reklam=0\n", false);
+        Sekme *s = etkin(p); if (s && s->wv) s->wv->Reload();
+    }
     else if (c >= M_YERIMI && c < M_YERIMI + (int)v.size()) sekme_ac(p, v[c - M_YERIMI].second);
 }
 
@@ -373,10 +428,23 @@ static void sekme_kur(Sekme *s, ICoreWebView2Controller *den) {
     ICoreWebView2Settings *ay = nullptr;
     if (SUCCEEDED(s->wv->get_Settings(&ay)) && ay) { ay->put_IsScriptEnabled(TRUE); ay->put_AreDevToolsEnabled(TRUE); ay->put_IsStatusBarEnabled(TRUE); ay->Release(); }
     EventRegistrationToken tk;
-    s->wv->AddWebResourceRequestedFilter(L"https://aether.local/*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
-    s->wv->add_WebResourceRequested(new KaynakIstendi([p](ICoreWebView2 *, ICoreWebView2WebResourceRequestedEventArgs *a) -> HRESULT {
+    s->wv->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+    s->wv->add_WebResourceRequested(new KaynakIstendi([p, s](ICoreWebView2 *, ICoreWebView2WebResourceRequestedEventArgs *a) -> HRESULT {
         ICoreWebView2WebResourceRequest *r = nullptr; a->get_Request(&r); if (!r) return S_OK;
         LPWSTR u = nullptr; r->get_Uri(&u); wstring uri = al(u); r->Release();
+        if (!basla(uri, L"https://aether.local")) {
+            // üçüncü taraf reklam/izleyici isteklerini engelle; sayfanın kendisine dokunma
+            COREWEBVIEW2_WEB_RESOURCE_CONTEXT tur = COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL;
+            a->get_ResourceContext(&tur);
+            if (reklam_acik && tur != COREWEBVIEW2_WEB_RESOURCE_CONTEXT_DOCUMENT) {
+                std::string h = ana_bilgisayar(uri);
+                if (reklam_mi(h) && !ayni_site(h, ana_bilgisayar(s->adres))) {
+                    ICoreWebView2WebResourceResponse *y = nullptr;
+                    if (SUCCEEDED(ortam->CreateWebResourceResponse(nullptr, 403, L"Blocked", L"", &y)) && y) { a->put_Response(y); y->Release(); }
+                }
+            }
+            return S_OK;
+        }
         wstring yol = uri.substr(wcslen(L"https://aether.local"));
         size_t q = yol.find_first_of(L"?#"); if (q != wstring::npos) yol = yol.substr(0, q);
         if (yol == L"/arkaplan.png") {
@@ -575,6 +643,9 @@ int WINAPI wWinMain(HINSTANCE h, HINSTANCE, LPWSTR, int) {
     veri_dizini = wstring(yol) + L"\\Aether\\Eclipse";
     SHCreateDirectoryExW(nullptr, veri_dizini.c_str(), nullptr);
     yerimi_yolu = veri_dizini + L"\\yerimleri.txt"; gecmis_yolu = veri_dizini + L"\\gecmis.txt";
+    ayar_yolu = veri_dizini + L"\\ayarlar.txt";
+    reklam_acik = dosya_oku(ayar_yolu).find("reklam=0") == std::string::npos;
+    reklam_yukle();
     SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, yol);
     wstring motor_verisi = wstring(yol) + L"\\Aether\\Eclipse\\Motor";
 

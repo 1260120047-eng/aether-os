@@ -6,6 +6,7 @@ S=/usr/share/icons/hicolor/scalable/apps/aether-eclipse.svg
 for n in 16 24 32 48 64 128 256; do rsvg-convert -w $n -h $n $S -o /tmp/ik$n.png; done
 magick /tmp/ik16.png /tmp/ik24.png /tmp/ik32.png /tmp/ik48.png /tmp/ik64.png /tmp/ik128.png /tmp/ik256.png eclipse.ico
 cp /work/overlay/usr/share/plymouth/themes/aether/arkaplan.png arkaplan.png
+cp /work/overlay/usr/share/aether/eclipse/reklam-alanlari.txt reklam-alanlari.txt
 SDK=/work/win/sdk/build/native
 x86_64-w64-mingw32-windres eclipse.rc -O coff -o eclipse.res
 x86_64-w64-mingw32-g++ -std=c++17 -O2 -municode -mwindows -Wall -Wno-unknown-pragmas -Wno-unused-function \

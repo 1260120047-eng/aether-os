@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     gtk_box_pack_start(GTK_BOX(ust), ae_logo(72), FALSE, FALSE, 0);
     GtkWidget *bk = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_box_pack_start(GTK_BOX(bk), ae_etiket("A E T H E R", "ae-baslik"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(bk), ae_etiket("1.0 · Nebula", "ae-alt"), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(bk), ae_etiket("1.1 · Nebula", "ae-alt"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ust), bk, FALSE, FALSE, 0);
     gtk_box_set_center_widget(GTK_BOX(ust), NULL);
     gtk_box_pack_start(GTK_BOX(k), ust, FALSE, FALSE, 0);
@@ -79,7 +79,6 @@ int main(int argc, char **argv) {
         gtk_box_pack_end(GTK_BOX(alt), tamam, FALSE, FALSE, 0);
     }
     gtk_box_pack_end(GTK_BOX(k), alt, FALSE, FALSE, 0);
-    gtk_box_pack_end(GTK_BOX(k), ae_etiket(T("Yapımcı: " AETHER_YAPIMCI, "Made by " AETHER_YAPIMCI), "ae-alt"), FALSE, FALSE, 0);
     gtk_container_add(GTK_CONTAINER(pencere), k);
     gtk_widget_show_all(pencere);
     gtk_main();
