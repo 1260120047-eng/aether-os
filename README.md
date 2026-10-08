@@ -2,7 +2,7 @@
 
 [![ISO](https://github.com/1260120047-eng/aether-os/actions/workflows/iso.yml/badge.svg)](https://github.com/1260120047-eng/aether-os/actions/workflows/iso.yml)
 
-Aether, merak ettiğim için yaptığım küçük bir Linux dağıtımı. Alpine Linux üzerine kurulu, ISO dosyası 500 MB civarında, açılışta RAM'e yükleniyor ve beğenirsen diske kurulabiliyor. Arayüz Türkçe (İngilizce de var).
+Aether, merak ettiğim için yaptığım küçük bir Linux dağıtımı. Alpine Linux üzerine kurulu, ISO dosyası 485 MB civarında, açılışta RAM'e yükleniyor ve beğenirsen diske kurulabiliyor. Arayüz Türkçe (İngilizce de var).
 
 Bu depo, **Aether 1.1 "Nebula"** sürümünün kaynak kodları. Hazır ISO'yu indirmek için: **[aether-os.dev](https://aether-os.dev)**
 

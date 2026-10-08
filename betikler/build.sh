@@ -112,6 +112,8 @@ M=$R/lib/modules/$KV/kernel
 rm -rf $M/drivers/infiniband $M/drivers/isdn $M/drivers/atm $M/drivers/nfc
 chroot $R depmod -a $KV 2>/dev/null || true
 rm -rf $R/usr/share/man $R/usr/share/doc $R/usr/share/info $R/usr/share/gtk-doc $R/var/cache/apk/* $R/boot/initramfs-lts $R/boot/System.map*
+# OpenCL için Mesa sürücü kopyaları (~100 MB); masaüstü ve OpenGL kullanmıyor
+rm -rf $R/usr/lib/gallium-pipe
 rm -f $R/etc/resolv.conf
 
 echo "== squashfs"
