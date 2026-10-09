@@ -99,6 +99,7 @@ jobs:
           for m in proc sys dev dev/pts; do sudo mkdir -p "$R/$m"; sudo mount --bind "/$m" "$R/$m"; done
           sudo mkdir -p "$R/work/win/src" "$R/work/cikti"
           sudo cp -a windows/. "$R/work/win/src/"
+          sudo cp -a overlay "$R/work/overlay"   # simge, arka plan ve reklam listesi buradan alınır
           sudo chroot "$R" /bin/sh -c 'set -e
             apk update -q
             apk add -q curl zip imagemagick rsvg-convert
