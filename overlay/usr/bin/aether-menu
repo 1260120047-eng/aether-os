@@ -25,22 +25,27 @@ if [ "$1" = guc ]; then guc; exit 0; fi
 
 [ $CANLI = 1 ] && { i "$(t "Aether'i Diske Kur" "Install Aether")" "$(ad aether-kurulum)" aether-kurulum; ayrac; }
 i "Terminal" "$(ad aether-terminal)" aether-terminal
-i "$(t Dosyalar Files)" "$(ad aether-dosyalar)" pcmanfm
+i "$(t Dosyalar Files)" "$(ad aether-dosyalar)" aether-dosyalar
 i "$(t "Metin Editörü" "Text Editor")" "$(ad aether-metin)" mousepad
 i "Eclipse  ($(t "Web Tarayıcı" "Web Browser"))" "$(ad aether-eclipse)" eclipse-tarayici
+i "$(t "Uygulama Mağazası" "App Store")" "$(ad aether-magaza)" aether-magaza
 ayrac
+# Uygulamalar: kurulu her programın .desktop dosyasından, kategorilere ayrılmış hâlde.
+# pacman ile kurulan programlar (ör. Prism Launcher) buraya kendiliğinden düşer.
 alt "$(t Uygulamalar Applications)" "$(ad aether-uygulamalar)"
-  i "$(t "Resim Görüntüleyici" "Image Viewer")" "$(ad aether-resim)" ristretto
-  i "$(t "Hesap Makinesi" "Calculator")" "$(ad aether-hesap)" galculator
-  command -v audacious >/dev/null && i "$(t "Müzik Çalar" "Music Player")" "$(ad aether-muzik)" audacious
+  aether-uygulamalar menu 2>/dev/null
 son
 alt "$(t Oyunlar Games)" "$(ad aether-oyunlar)"
+  i "$(t "Oyun Modu" "Game Mode")" "$(ad aether-oyun)" aether-oyun-modu
   i "$(t "Oyun Başlatıcı" "Game Launcher")" "$(ad aether-oyunlar)" aether-oyunlar
   i "$(t "Mayın Tarlası" "Minesweeper")" "$(ad aether-mayin)" aether-mayin
+  OY=$(aether-uygulamalar oyunlar 2>/dev/null)
+  [ -n "$OY" ] && { ayrac; printf '%s\n' "$OY"; }
 son
 printf 'P\t%s\t%s\n' "$(t Pencereler Windows)" "$(ad aether-uygulamalar)"
 ayrac
 i "$(t Ayarlar Settings)" "$(ad aether-ayarlar)" aether-ayarlar
+i "$(t "Görev Yöneticisi" "Task Manager")" "$(ad aether-gorev)" aether-gorev
 i "$(t "Ekran Görüntüsü" "Screenshot")" "$(ad aether-kamera)" aether-ekran-goruntusu
 ayrac
 guc

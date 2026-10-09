@@ -1,0 +1,12 @@
+[Unit]
+Description=Aether: ekran kartına göre grafik ayarı (sanal makinede 3D hızlandırma)
+Before=display-manager.service
+After=systemd-udev-trigger.service systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/aether/grafik-ayarla
+
+[Install]
+WantedBy=display-manager.service

@@ -1,0 +1,77 @@
+#!/bin/sh
+# grafik-ayarla — X açılmadan önce ekran kartına göre grafik ayarını seçer (aether-grafik.service)
+#
+# Sanal makinelerde 3D hızlandırma (VirtualBox VMSVGA + "3D hızlandırmayı etkinleştir", VMware,
+# QEMU virtio-gpu + virgl) varsa X'in OpenGL hızlandırması (glamor) açılır; böylece oyunlar ve
+# pencere efektleri ekran kartını kullanır. 3D yoksa glamor kapatılır: aksi hâlde bazı sanal
+# kartlarda ekran siyah kalıyor.
+#   grafik-ayarla           ayarı yaz
+#   grafik-ayarla durum     ne bulduğunu yazdır (değişiklik yapmaz)
+KONF=/etc/X11/xorg.conf.d/20-aether-sanal.conf
+SANAL=$(systemd-detect-virt --vm 2>/dev/null || echo none)
+
+# ekran kartı sürücüsü yüklensin (en çok 6 sn)
+i=0; while [ $i -lt 30 ] && ! ls /dev/dri/card* >/dev/null 2>&1; do sleep 0.2; i=$((i + 1)); done
+
+# donanım OpenGL'i var mı: EGL ile (ekran olmadan) bir bağlam açıp çiziciye bak
+cizici() {
+  for p in gbm surfaceless; do
+    r=$(timeout 15 eglinfo -B -p $p 2>/dev/null | sed -n 's/.*OpenGL[^:]*renderer[^:]*: *//p' | head -1)
+    [ -n "$r" ] && { echo "$r"; return; }
+  done
+}
+# 3D destekli sanal kartlarda render düğümü sürücüden biraz sonra gelebilir (en çok 5 sn daha)
+case "$(basename "$(readlink /sys/class/drm/card*/device/driver 2>/dev/null | head -1)")" in
+  vmwgfx|virtio-pci|virtio_gpu|qxl)
+    i=0; while [ $i -lt 25 ] && ! ls /dev/dri/renderD* >/dev/null 2>&1; do sleep 0.2; i=$((i + 1)); done ;;
+esac
+# render düğümü yoksa (ör. QEMU std/bochs, VirtualBox VBoxVGA) 3D olamaz; yavaş denemeye gerek yok
+if ls /dev/dri/renderD* >/dev/null 2>&1; then
+  CIZICI=$(cizici)
+  # hiç yanıt yoksa sürücü henüz hazır değildir: biraz bekleyip bir kez daha dene
+  [ -z "$CIZICI" ] && { sleep 2; CIZICI=$(cizici); }
+else
+  CIZICI=""
+fi
+case "$CIZICI" in
+  ""|*llvmpipe*|*softpipe*|*"Software Rasterizer"*) HIZ=0 ;;
+  *) HIZ=1 ;;
+esac
+
+if [ "$1" = durum ]; then
+  echo "sanal makine: $SANAL"
+  echo "OpenGL çizici: ${CIZICI:-yok}"
+  [ $HIZ = 1 ] && echo "3D hızlandırma: açık" || echo "3D hızlandırma: yok (yazılımla çizim)"
+  exit 0
+fi
+
+if [ "$SANAL" = none ]; then
+  # gerçek bilgisayar: X kendi seçsin
+  rm -f "$KONF"
+  exit 0
+fi
+
+mkdir -p "${KONF%/*}"
+if [ $HIZ = 1 ]; then
+  cat > "$KONF" <<EOF
+# Aether (grafik-ayarla): sanal makinede 3D hızlandırma bulundu ($CIZICI) — glamor açık.
+Section "OutputClass"
+    Identifier  "Aether sanal ekran"
+    MatchDriver "vmwgfx|virtio_gpu|qxl"
+    Driver      "modesetting"
+    Option      "AccelMethod" "glamor"
+EndSection
+EOF
+else
+  cat > "$KONF" <<EOF
+# Aether (grafik-ayarla): sanal makinede 3D hızlandırma yok — glamor kapalı (siyah ekranı önler).
+# VirtualBox'ta hızlandırma için: Ayarlar › Ekran › Grafik denetleyici: VMSVGA ve "3D hızlandırmayı etkinleştir".
+Section "OutputClass"
+    Identifier  "Aether sanal ekran"
+    MatchDriver "vmwgfx|vboxvideo|virtio_gpu|qxl|bochs-drm|bochs|simpledrm"
+    Driver      "modesetting"
+    Option      "AccelMethod" "none"
+EndSection
+EOF
+fi
+exit 0

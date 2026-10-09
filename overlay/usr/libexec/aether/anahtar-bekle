@@ -1,0 +1,7 @@
+#!/bin/sh
+# ilk açılışta pacman anahtarlığı hazırlanıyorsa bitmesini bekle
+if systemctl is-active -q aether-pacman-anahtar.service 2>/dev/null; then
+  echo "› paket imza anahtarları hazırlanıyor, bekleniyor…"
+  while systemctl is-active -q aether-pacman-anahtar.service; do sleep 1; done
+fi
+exit 0

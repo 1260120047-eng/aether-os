@@ -1,9 +1,0 @@
-NAME="Aether"
-PRETTY_NAME="Aether 1.1 (Nebula)"
-ID=aether
-ID_LIKE=alpine
-VERSION="1.1 (Nebula)"
-VERSION_ID=1.1
-VERSION_CODENAME=nebula
-HOME_URL="https://alpinelinux.org/"
-LOGO=aether

@@ -1,0 +1,59 @@
+#!/bin/sh
+# Oyun Modu'nun yönetici işleri (sudo ile çalışır)
+#   oyun-yardimci steam KULLANICI     32 bit depoyu (multilib) açar; Steam, GameMode, MangoHud ve ekran kartına uygun
+#                                     32/64 bit Vulkan sürücülerini kurar; kullanıcıyı gamemode grubuna ekler
+#   oyun-yardimci surucu              yalnızca ekran kartı sürücülerini (Vulkan, 32 bit dahil) kurar
+#   oyun-yardimci performans ac|kapat işlemci hız profilini "performance" ya da varsayılana alır
+set -e
+exec 2>&1
+[ "$(id -u)" = 0 ] || { echo "root gerekli" >&2; exit 1; }
+/usr/libexec/aether/anahtar-bekle
+P="pacman --noconfirm --noprogressbar --color never"
+
+multilib_ac() {
+  if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
+    echo "› 32 bit paket deposu (multilib) açılıyor"
+    sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
+    grep -q '^\[multilib\]' /etc/pacman.conf || printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf
+  fi
+}
+
+# ekran kartına göre Vulkan sürücüleri
+gpu_paketleri() {
+  paket="vulkan-icd-loader lib32-vulkan-icd-loader mesa lib32-mesa"
+  for d in /sys/bus/pci/devices/*; do
+    case "$(cat "$d/class" 2>/dev/null)" in 0x03*) ;; *) continue ;; esac
+    case "$(cat "$d/vendor")" in
+      0x1002) paket="$paket vulkan-radeon lib32-vulkan-radeon" ;;
+      0x8086) paket="$paket vulkan-intel lib32-vulkan-intel" ;;
+      0x10de)
+        # Turing (GTX 16xx / RTX 20xx) ve sonrası: NVIDIA'nın açık çekirdek sürücüsü; daha eskiler: Mesa NVK
+        if [ $(( $(cat "$d/device") )) -ge $((0x1e00)) ]; then paket="$paket nvidia-open nvidia-utils lib32-nvidia-utils"
+        else paket="$paket vulkan-nouveau lib32-vulkan-nouveau"; fi ;;
+    esac
+  done
+  # sanal makine ya da tanınmayan kart: yazılımla Vulkan
+  case "$paket" in *vulkan-radeon*|*vulkan-intel*|*nvidia*|*nouveau*) ;; *) paket="$paket vulkan-swrast lib32-vulkan-swrast" ;; esac
+  echo $paket
+}
+
+case "$1" in
+  steam)
+    multilib_ac
+    $P -Syu --needed steam gamemode lib32-gamemode mangohud lib32-mangohud $(gpu_paketleri)
+    [ -n "$2" ] && id "$2" >/dev/null 2>&1 && { gpasswd -a "$2" gamemode >/dev/null; echo "› $2 gamemode grubuna eklendi"; }
+    ;;
+  surucu)
+    multilib_ac
+    $P -Syu --needed $(gpu_paketleri) ;;
+  performans)
+    yeni=powersave
+    [ "$2" = ac ] && yeni=performance
+    for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+      [ -w "$g" ] || continue
+      grep -qw "$yeni" "${g%/*}/scaling_available_governors" 2>/dev/null || { [ "$yeni" = powersave ] && grep -qw schedutil "${g%/*}/scaling_available_governors" && echo schedutil > "$g"; continue; }
+      echo "$yeni" > "$g"
+    done
+    echo "› işlemci profili: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo yok)" ;;
+  *) echo "Kullanım: oyun-yardimci steam KULLANICI | surucu | performans ac|kapat" >&2; exit 2 ;;
+esac

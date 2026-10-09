@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Görev Yöneticisi
+Name[en]=Task Manager
+Comment=Çalışan programlar, CPU ve bellek kullanımı
+Comment[en]=Running programs, CPU and memory usage
+Exec=aether-gorev
+Icon=aether-gorev
+Categories=System;Monitor;

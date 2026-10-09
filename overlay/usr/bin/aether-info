@@ -10,7 +10,7 @@ M=$'\e[38;5;141m'; B=$'\e[38;5;111m'; P=$'\e[38;5;183m'; G=$'\e[38;5;245m'; W=$'
 cekirdek=$(uname -r)
 s=$(cut -d. -f1 /proc/uptime); sure="$((s/86400))$(t g d) $((s%86400/3600))$(t sa h) $((s%3600/60))$(t dk m)"
 [ $((s/86400)) = 0 ] && sure="$((s%86400/3600))$(t sa h) $((s%3600/60))$(t dk m)"
-paket=$(apk info 2>/dev/null | wc -l)
+paket=$(pacman -Qq 2>/dev/null | wc -l)
 cpu=$(awk -F': ' '/model name/{print $2; exit}' /proc/cpuinfo); cpu="${cpu:-?} ($(nproc))"
 bel=$(awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{printf "%d MiB / %d MiB", (t-a)/1024, t/1024}' /proc/meminfo)
 disk=$(df -h / | awk 'NR==2{print $3" / "$2" ("$5")"}')
@@ -33,10 +33,10 @@ bilgi=(
 "${W}${USER}${G}@${W}$(hostname)${R}"
 "${G}$(n=$(( ${#USER} + ${#HOSTNAME} + 1 )); while [ $n -gt 0 ]; do printf '─'; n=$((n-1)); done)${R}"
 "${M}$(t "Sistem" "System")${R}      ${PRETTY_NAME}"
-"${M}$(t "Taban" "Base")${R}       Alpine Linux $(cat /etc/alpine-release 2>/dev/null)"
+"${M}$(t "Taban" "Base")${R}       Arch Linux"
 "${M}$(t "Çekirdek" "Kernel")${R}    ${cekirdek}"
 "${M}$(t "Süre" "Uptime")${R}        ${sure}"
-"${M}$(t "Paketler" "Packages")${R}    ${paket} (apk)"
+"${M}$(t "Paketler" "Packages")${R}    ${paket} (pacman)"
 "${M}$(t "Kabuk" "Shell")${R}       ${SHELL##*/}"
 "${M}$(t "Masaüstü" "Desktop")${R}    Yörünge · Aether ${tema}"
 )

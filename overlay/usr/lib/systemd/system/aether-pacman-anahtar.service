@@ -1,0 +1,13 @@
+[Unit]
+Description=Aether: pacman anahtarlığını hazırla
+# ISO'ya özel anahtar gömülmez; her sistem kendi anahtarını ilk açılışta üretir
+ConditionDirectoryNotEmpty=!/etc/pacman.d/gnupg
+
+[Service]
+# açılışı bekletmesin
+Type=exec
+Nice=10
+ExecStart=/bin/sh -c 'pacman-key --init && pacman-key --populate archlinux'
+
+[Install]
+WantedBy=multi-user.target

@@ -3,7 +3,7 @@
 case "$1" in
   kilitle) exec aether-kilitle ;;
   cikis)   aether-ses kapanis; pkill -x yorunge ;;
-  yeniden) aether-ses kapanis; loginctl reboot 2>/dev/null || doas /sbin/reboot ;;
-  kapat)   aether-ses kapanis; loginctl poweroff 2>/dev/null || doas /sbin/poweroff ;;
+  yeniden) aether-ses kapanis; systemctl reboot ;;
+  kapat)   aether-ses kapanis; systemctl poweroff ;;
   *) echo "Kullanım: aether-guc kilitle|cikis|yeniden|kapat"; exit 1 ;;
 esac

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Dosyalar
+Name[en]=Files
+Comment=Dosyalarına ve disklerine göz at
+Comment[en]=Browse your files and drives
+Exec=aether-dosyalar %U
+Icon=aether-dosyalar
+Categories=System;FileManager;
+MimeType=inode/directory;
+Keywords=dosya;klasör;gezgin;files;folder;explorer;

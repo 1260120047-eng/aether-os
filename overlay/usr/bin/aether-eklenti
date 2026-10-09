@@ -3,9 +3,9 @@
 #   aether-eklenti liste | durum <ad> | kur <ad> | kaldir <ad>
 paketler() {
   case "$1" in
-    muzik)       echo "audacious audacious-plugins alsa-utils alsa-lib" ;;
+    muzik)       echo "audacious audacious-plugins" ;;
     animasyon)   echo "picom" ;;
-    gelistirici) echo "sdl2-dev mesa-dev cmake" ;;
+    gelistirici) echo "cmake git gdb" ;;
     *) return 1 ;;
   esac
 }
@@ -13,21 +13,22 @@ islem="$1"; ad="$2"
 case "$islem" in
   liste)
     for e in muzik animasyon gelistirici; do
-      if apk info -e $(paketler $e | cut -d' ' -f1) >/dev/null 2>&1; then d="+"; else d="-"; fi
+      if pacman -Q $(paketler $e | cut -d' ' -f1) >/dev/null 2>&1; then d="+"; else d="-"; fi
       echo "$d $e: $(paketler $e)"
     done ;;
   durum)
     p=$(paketler "$ad") || exit 2
-    apk info -e $(echo $p | cut -d' ' -f1) >/dev/null 2>&1 ;;
+    pacman -Q $(echo $p | cut -d' ' -f1) >/dev/null 2>&1 ;;
   kur)
     p=$(paketler "$ad") || { echo "Bilinmeyen eklenti: $ad"; exit 2; }
     [ "$(id -u)" = 0 ] || exec doas "$0" "$@"
-    echo "› apk add $p"
-    apk update -q && apk add --no-progress $p ;;
+    /usr/libexec/aether/anahtar-bekle
+    echo "› pacman -S $p"
+    pacman -Sy --needed --noconfirm $p ;;
   kaldir)
     p=$(paketler "$ad") || { echo "Bilinmeyen eklenti: $ad"; exit 2; }
     [ "$(id -u)" = 0 ] || exec doas "$0" "$@"
-    echo "› apk del $p"
-    apk del --no-progress $p ;;
+    echo "› pacman -R $p"
+    pacman -Rns --noconfirm $p ;;
   *) echo "Kullanım: aether-eklenti liste | durum AD | kur AD | kaldir AD   (AD: muzik, animasyon, gelistirici)"; exit 1 ;;
 esac

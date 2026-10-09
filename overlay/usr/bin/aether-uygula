@@ -39,6 +39,7 @@ pkill -HUP -x yorunge 2>/dev/null
 [ -n "$DISPLAY" ] && {
   [ -f "$DUVAR" ] || DUVAR=/usr/share/aether/wallpapers/nebula.png
   feh --no-fehbg --bg-fill "$DUVAR" 2>/dev/null
+  pkill -HUP -x aether-masaustu 2>/dev/null
   case "$KLAVYE" in
     trf) setxkbmap tr -variant f ;;
     us)  setxkbmap us ;;

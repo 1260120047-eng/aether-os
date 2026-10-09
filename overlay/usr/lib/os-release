@@ -1,0 +1,11 @@
+NAME="Aether"
+PRETTY_NAME="Aether 2.0 (Orion)"
+ID=aether
+ID_LIKE=arch
+VERSION="2.0 (Orion)"
+VERSION_ID=2.0
+VERSION_CODENAME=orion
+BUILD_ID=rolling
+HOME_URL="https://aether-os.dev/"
+BUG_REPORT_URL="https://github.com/1260120047-eng/aether-os/issues"
+LOGO=aether

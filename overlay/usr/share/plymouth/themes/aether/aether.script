@@ -1,4 +1,4 @@
-// Aether 1.1 "Nebula" açılış ekranı
+// Aether 2.0 "Orion" açılış ekranı
 W = Window.GetWidth(); H = Window.GetHeight();
 arka = Image("arkaplan.png");
 arka = arka.Scale(W, H);

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Oyun Modu
+Name[en]=Game Mode
+Comment=Steam, oyun sürücüleri ve performans modu
+Comment[en]=Steam, gaming drivers and performance mode
+Exec=aether-oyun-modu
+Icon=aether-oyun
+Categories=Game;Settings;

@@ -1,5 +1,5 @@
 /* Eclipse — Aether'in web tarayıcısı (WebKitGTK motoru üzerinde)
-   Aether 1.1 "Nebula"
+   Aether 2.0 "Orion"
    Sekmeler, Aether ana sayfası, yer imleri, geçmiş, indirmeler, gizli pencere. */
 #include "aether.h"
 #include <glib/gstdio.h>
@@ -181,7 +181,7 @@ static char *ev_sayfasi(gboolean gizli) {
         "t();setInterval(t,1000);})();</script>");
     g_string_append(h, "<h1>E C L I P S E</h1>");
     g_string_append_printf(h, "<div class=alt>%s</div>", gizli ? T("GİZLİ PENCERE · GEÇMİŞ KAYDEDİLMEZ", "PRIVATE WINDOW · NO HISTORY")
-                                                              : "AETHER 1.1 · NEBULA");
+                                                              : "AETHER 2.0 · ORION");
     g_string_append_printf(h, "<form onsubmit=\"var q=document.getElementById('q').value.trim();if(q)location.href='https://duckduckgo.com/?q='+encodeURIComponent(q);return false\">"
         "<input id=q autofocus placeholder=\"%s\"><button>%s</button></form>",
         T("Web'de ara veya adres yaz…", "Search the web or type an address…"), T("Ara", "Search"));
@@ -191,7 +191,7 @@ static char *ev_sayfasi(gboolean gizli) {
     kutu_ekle(h, T("Vikipedi", "Wikipedia"), ae_en() ? "https://en.wikipedia.org" : "https://tr.wikipedia.org");
     kutu_ekle(h, "GitHub", "https://github.com");
     kutu_ekle(h, "DuckDuckGo", "https://duckduckgo.com");
-    kutu_ekle(h, "Alpine Linux", "https://alpinelinux.org");
+    kutu_ekle(h, "Arch Wiki", ae_en() ? "https://wiki.archlinux.org" : "https://wiki.archlinux.org/title/Main_page_(T%C3%BCrk%C3%A7e)");
     g_string_append(h, "</div>");
     char *c = NULL;
     if (g_file_get_contents(yerimi_yolu, &c, NULL, NULL) && *c) {
@@ -591,7 +591,7 @@ static Pencere *pencere_ac(gboolean gizli, const char *url) {
     p->indirme_listesi = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(pk), p->indirme_listesi, FALSE, FALSE, 0);
     GtkWidget *klasor = gtk_button_new_with_label(T("İndirilenler klasörünü aç", "Open downloads folder"));
-    char *kk = g_strdup_printf("pcmanfm \"%s\"", indirme_dizini);
+    char *kk = g_strdup_printf("aether-dosyalar \"%s\"", indirme_dizini);
     g_signal_connect_swapped(klasor, "clicked", G_CALLBACK(ae_calistir), kk);
     gtk_box_pack_end(GTK_BOX(pk), klasor, FALSE, FALSE, 4);
     gtk_container_add(GTK_CONTAINER(pop), pk);

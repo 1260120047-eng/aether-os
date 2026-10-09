@@ -1,32 +1,37 @@
-#!/bin/sh
-# Aether kök sistemini /work/rootfs içine sıfırdan kurar
+#!/bin/bash
+# Aether 2.0 "Orion" — Arch Linux kök sistemini /work/rootfs içine sıfırdan kurar
 set -e
 R=/work/rootfs
-umount -R $R/dev $R/proc $R/sys 2>/dev/null || true
-[ -d $R ] && find $R -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-mkdir -p $R/etc/apk/keys
-cp /etc/apk/repositories $R/etc/apk/
-cp /etc/apk/keys/* $R/etc/apk/keys/
+umount -R $R 2>/dev/null || true
+rm -rf $R; mkdir -p $R
 
-PKGS="
-alpine-base openrc busybox-openrc bash bash-completion shadow doas tzdata
-linux-lts linux-firmware-none linux-firmware-i915 linux-firmware-radeon linux-firmware-xe linux-firmware-rtl_nic mkinitfs
-eudev udev-init-scripts udev-init-scripts-openrc
-dbus dbus-x11 elogind polkit-elogind
-xorg-server xf86-input-libinput xinit xrandr setxkbmap xset xinput xdotool xprop xprintidle
-mesa-dri-gallium mesa-gl mesa-egl mesa-gles mesa-utils sdl2
-feh
-lightdm lightdm-gtk-greeter
-vte3 libwnck3 libnotify iwd alsa-utils alsa-utils-openrc alsa-ucm-conf mousepad pcmanfm ristretto galculator webkit2gtk-4.1 gst-plugins-good gst-plugins-base
-i3lock scrot
-plymouth
-font-jetbrains-mono font-dejavu adwaita-icon-theme
-musl-locales musl-locales-lang
-gcc g++ make cmake musl-dev pkgconf
-e2fsprogs dosfstools sfdisk grub grub-bios grub-efi efibootmgr rsync squashfs-tools
-dhcpcd iproute2 ca-certificates curl
-kbd-bkeymaps
-mousepad-lang lightdm-gtk-greeter-lang pcmanfm-lang ristretto-lang galculator-lang libwnck3-lang
-"
-apk add --root $R --initdb -U --no-progress $PKGS 2>&1 | grep -E "ERROR|^OK" || true
+PKGS=(
+  # taban
+  base linux mkinitcpio opendoas bash-completion less nano sudo
+  grub efibootmgr dosfstools e2fsprogs squashfs-tools rsync ntfs-3g ntfsprogs archlinux-appstream-data gvfs udisks2 flatpak xdg-desktop-portal-gtk virtualbox-guest-utils spice-vdagent open-vm-tools
+  # firmware (tam): AMD ekran kartları ve Realtek. Diğerleri build.sh'de sürücüye göre seçilir.
+  linux-firmware-amdgpu linux-firmware-radeon linux-firmware-realtek
+  # masaüstü
+  xorg-server xorg-xinit xorg-xrandr xorg-setxkbmap xorg-xset xorg-xinput xorg-xprop xprintidle xdotool
+  xf86-input-libinput xf86-video-vesa xf86-video-fbdev mesa mesa-utils sdl2-compat
+  lightdm lightdm-gtk-greeter plymouth xsettingsd feh i3lock scrot
+  # uygulamalar ve kütüphaneler
+  mousepad ristretto galculator webkit2gtk-4.1 gst-plugins-good gst-plugins-base
+  vte3 libwnck3 libnotify libxft libxcursor gdk-pixbuf2 librsvg
+  # ağ ve ses
+  iwd dhcpcd alsa-utils alsa-ucm-conf
+  # yazı tipleri ve simgeler
+  ttf-jetbrains-mono ttf-dejavu adwaita-icon-theme
+  # geliştirici (oyun motorları için)
+  gcc make pkgconf
+)
+pacstrap -c -K $R "${PKGS[@]}" 2>&1 | grep -E "error|warning: .*conflict|installing linux |Total Installed" || true
+
+# dil: Türkçe ve İngilizce
+sed -i 's/^#tr_TR.UTF-8/tr_TR.UTF-8/; s/^#en_US.UTF-8/en_US.UTF-8/' $R/etc/locale.gen
+arch-chroot $R locale-gen >/dev/null
+echo 'LANG=tr_TR.UTF-8' > $R/etc/locale.conf
+printf 'KEYMAP=trq\nFONT=\n' > $R/etc/vconsole.conf
+ln -sf /usr/share/zoneinfo/Europe/Istanbul $R/etc/localtime
+echo aether > $R/etc/hostname
 du -sh $R

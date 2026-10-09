@@ -1,0 +1,17 @@
+// Aether: yönetici grubundaki (wheel) kullanıcı, kendi oturumunda diskleri (ör. Windows bölümü, USB bellek)
+// parola sormadan bağlayıp ayırabilsin. Biçimlendirme gibi işlemler yine parola ister.
+polkit.addRule(function (action, subject) {
+  var izinli = [
+    "org.freedesktop.udisks2.filesystem-mount",
+    "org.freedesktop.udisks2.filesystem-mount-system",
+    "org.freedesktop.udisks2.filesystem-mount-other-seat",
+    "org.freedesktop.udisks2.encrypted-unlock",
+    "org.freedesktop.udisks2.encrypted-unlock-system",
+    "org.freedesktop.udisks2.eject-media",
+    "org.freedesktop.udisks2.eject-media-system",
+    "org.freedesktop.udisks2.power-off-drive",
+    "org.freedesktop.udisks2.power-off-drive-system"
+  ];
+  if (izinli.indexOf(action.id) >= 0 && subject.isInGroup("wheel") && subject.local && subject.active)
+    return polkit.Result.YES;
+});

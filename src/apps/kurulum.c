@@ -4,6 +4,7 @@
 #include "aether.h"
 #include <ctype.h>
 #include <sys/stat.h>
+#include <math.h>
 
 static GtkWidget *pencere, *yigin, *geri, *ileri, *adim_etiketi;
 static int adim = 0;
@@ -12,6 +13,10 @@ static GtkWidget *e_ad, *e_kul, *e_bil, *e_s1, *e_s2, *hesap_uyari;
 static GtkWidget *disk_liste, *disk_onay, *ozet_etiketi, *ilerleme, *durum, *gunluk_tb_w;
 static char *secili_disk;
 static gboolean kul_elle = FALSE;
+/* kurulum türü: bütün disk ya da Windows'un yanına */
+static GtkWidget *tur_tum, *tur_yanina, *boyut_olcek, *yanina_kutu, *yanina_bilgi, *disk_uyari;
+static GHashTable *disk_bilgisi;
+static int yanina_mumkun;
 
 enum { S_DIL, S_KLAVYE, S_HESAP, S_DISK, S_OZET, S_KUR, S_BITTI, S_SAYI };
 static GtkWidget *sayfalar[S_SAYI];
@@ -54,7 +59,7 @@ static GtkWidget *dil_sayfasi(void) {
     gtk_box_pack_start(GTK_BOX(ust), ae_logo(80), FALSE, FALSE, 0);
     GtkWidget *b = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_box_pack_start(GTK_BOX(b), ae_etiket("A E T H E R", "ae-baslik"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(b), ae_etiket("1.1 · Nebula — Kurulum / Setup", "ae-alt"), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(b), ae_etiket("2.0 · Orion — Kurulum / Setup", "ae-alt"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ust), b, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(k), ust, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(k), ae_etiket("Dilini seç  ·  Choose your language", NULL), FALSE, FALSE, 8);
@@ -170,8 +175,93 @@ static char *oku(const char *yol) { char *c = NULL; if (g_file_get_contents(yol,
 static char *kaynak_disk(void) {   /* canlı ortamın açıldığı disk kurulum listesinde gösterilmez */
     char *k = oku("/run/aether/kaynak-disk"); return k;
 }
+static double bilgi_sayi(const char *k) { const char *v = disk_bilgisi ? g_hash_table_lookup(disk_bilgisi, k) : NULL; return v ? g_ascii_strtod(v, NULL) : 0; }
+static const char *bilgi_yazi(const char *k) { const char *v = disk_bilgisi ? g_hash_table_lookup(disk_bilgisi, k) : NULL; return v ? v : ""; }
+#define GB_ (1024.0 * 1024 * 1024)
+
+static int yanina_secili(void) { return tur_yanina && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(tur_yanina)) && yanina_mumkun; }
+
+/* seçime göre uyarı, onay kutusu ve boyut bilgisini güncelle */
+static void tur_degisti(void) {
+    if (!disk_onay) return;
+    int y = yanina_secili();
+    gtk_widget_set_sensitive(yanina_kutu, y);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(disk_onay), FALSE);
+    if (!y) {
+        gtk_label_set_text(GTK_LABEL(disk_uyari), T("⚠ Seçilen diskteki TÜM veriler silinecek.", "⚠ ALL data on the selected disk will be erased."));
+        gtk_button_set_label(GTK_BUTTON(disk_onay), T("Anladım, bu diskin silinmesini onaylıyorum", "I understand, erase this disk"));
+        return;
+    }
+    double gb = gtk_range_get_value(GTK_RANGE(boyut_olcek));
+    double bos = bilgi_sayi("BOS") / GB_;
+    char *m;
+    if (gb + 0.02 > bos) {
+        double wb = bilgi_sayi("WIN_BOYUT") / GB_;
+        double yeni = wb - (gb + 0.02 - bos);
+        m = g_strdup_printf(T("Windows bölümü %.0f GB'tan %.0f GB'a küçültülecek, açılan yere Aether kurulacak. Windows dosyalarına dokunulmaz; yine de önemli dosyalarını önceden yedeklemeni öneririm.",
+                              "The Windows partition will shrink from %.0f GB to %.0f GB and Aether will be installed in the freed space. Windows files are not touched, but backing up important files first is recommended."), wb, yeni);
+        gtk_label_set_text(GTK_LABEL(disk_uyari), T("⚠ Windows bölümü küçültülecek.", "⚠ The Windows partition will be shrunk."));
+        gtk_button_set_label(GTK_BUTTON(disk_onay), T("Yedeğimi aldım, devam etmeyi onaylıyorum", "I have a backup, continue"));
+    } else {
+        m = g_strdup_printf(T("Diskteki %.0f GB boş alanın %.0f GB'ı kullanılacak. Mevcut bölümlere dokunulmaz.",
+                              "%2$.0f GB of the %1$.0f GB free space will be used. Existing partitions are not touched."), bos, gb);
+        gtk_label_set_text(GTK_LABEL(disk_uyari), "");
+        gtk_button_set_label(GTK_BUTTON(disk_onay), T("Onaylıyorum", "I confirm"));
+    }
+    gtk_label_set_text(GTK_LABEL(yanina_bilgi), m); g_free(m);
+}
+static void tur_tik(GtkToggleButton *b, gpointer d) { (void)b; (void)d; tur_degisti(); }
+static void olcek_degisti(GtkRange *r, gpointer d) { (void)r; (void)d; tur_degisti(); }
+static char *olcek_yazisi(GtkScale *s, double v, gpointer d) { (void)s; (void)d; return g_strdup_printf("%.0f GB", v); }
+
+/* diski çözümle: Windows var mı, boş yer, küçültülebilir mi */
+static void disk_analiz(void) {
+    if (disk_bilgisi) g_hash_table_destroy(disk_bilgisi);
+    disk_bilgisi = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    yanina_mumkun = 0;
+    if (!secili_disk || !tur_yanina) return;
+    const char *argv[] = { "doas", "/usr/libexec/aether/disk-bilgi", secili_disk, NULL };
+    char *cikti = NULL;
+    if (g_spawn_sync(NULL, (char **)argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL, &cikti, NULL, NULL, NULL) && cikti) {
+        char **s = g_strsplit(cikti, "\n", -1);
+        for (int i = 0; s[i]; i++) { char *e = strchr(s[i], '='); if (e) { *e = 0; g_hash_table_insert(disk_bilgisi, g_strdup(s[i]), g_strdup(e + 1)); } }
+        g_strfreev(s);
+    }
+    g_free(cikti);
+    const char *win = bilgi_yazi("WINDOWS"), *durum_ = bilgi_yazi("WIN_DURUM"), *tablo = bilgi_yazi("TABLO");
+    double bos = bilgi_sayi("BOS"), kucult = 0;
+    if (*win && !strcmp(durum_, "tamam")) kucult = MAX(0, bilgi_sayi("WIN_BOYUT") - bilgi_sayi("WIN_MIN") - 8 * GB_);
+    double en_cok = floor((bos + kucult - 64.0 * 1024 * 1024) / GB_);
+    const char *neden = NULL;
+    if (strcmp(tablo, "gpt") && strcmp(tablo, "dos")) neden = T("Bu disk boş; bütün diski kullanabilirsin.", "This disk is empty; use the whole disk.");
+    else if (!strcmp(tablo, "gpt") && !strcmp(bilgi_yazi("UEFI"), "0") && *win)
+        neden = T("Windows UEFI ile kurulu ama Aether BIOS kipinde açıldı. USB'yi açılış menüsünden \"UEFI\" seçeneğiyle başlat.",
+                  "Windows uses UEFI but Aether was started in BIOS mode. Boot the USB with its \"UEFI\" option.");
+    else if (!strcmp(tablo, "dos") && bilgi_sayi("BOLUM_SAYI") >= 4) neden = T("Diskte 4 birincil bölüm var; yenisi açılamıyor.", "The disk already has 4 primary partitions.");
+    else if (*win && !strcmp(durum_, "uyku") && bos < 15 * GB_)
+        neden = T("Windows'ta \"Hızlı Başlatma\" açık ya da Windows hazırda bekletmede. Windows'ta Denetim Masası › Güç Seçenekleri'nden Hızlı Başlatma'yı kapat ve Windows'u \"Yeniden Başlat\" ile kapat.",
+                  "Windows Fast Startup is on or Windows is hibernated. Turn off Fast Startup in Control Panel › Power Options and shut Windows down with \"Restart\".");
+    else if (*win && !strcmp(durum_, "bitlocker") && bos < 15 * GB_) neden = T("Windows bölümü BitLocker ile şifreli; küçültülemez.", "The Windows partition is BitLocker-encrypted and cannot be shrunk.");
+    else if (en_cok < 15) neden = T("Aether için en az 15 GB boş yer gerekiyor; bu diskte o kadar yer açılamıyor.", "Aether needs at least 15 GB and that much space cannot be freed on this disk.");
+    yanina_mumkun = neden == NULL;
+    char *et = *win ? g_strdup(T("Windows'un yanına kur (açılışta hangisini istediğini seçersin)", "Install alongside Windows (choose one at startup)"))
+                    : g_strdup(T("Boş alana kur (diğer bölümlere dokunulmaz)", "Install in free space (other partitions are kept)"));
+    gtk_button_set_label(GTK_BUTTON(tur_yanina), et); g_free(et);
+    gtk_widget_set_sensitive(tur_yanina, yanina_mumkun);
+    if (yanina_mumkun) {
+        gtk_range_set_range(GTK_RANGE(boyut_olcek), 15, en_cok);
+        gtk_range_set_value(GTK_RANGE(boyut_olcek), MIN(en_cok, MAX(30, MIN(60, en_cok / 2))));
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(*win ? tur_yanina : tur_tum), TRUE);
+    } else {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(tur_tum), TRUE);
+        gtk_label_set_text(GTK_LABEL(yanina_bilgi), neden);
+    }
+    tur_degisti();
+    if (!yanina_mumkun) gtk_label_set_text(GTK_LABEL(yanina_bilgi), neden);
+}
+
 static void disk_secildi(GtkToggleButton *b, gpointer d) {
-    if (gtk_toggle_button_get_active(b)) { g_free(secili_disk); secili_disk = g_strdup(d); }
+    if (gtk_toggle_button_get_active(b)) { g_free(secili_disk); secili_disk = g_strdup(d); disk_analiz(); }
 }
 static void diskleri_doldur(void) {
     GList *c = gtk_container_get_children(GTK_CONTAINER(disk_liste));
@@ -201,17 +291,42 @@ static void diskleri_doldur(void) {
     if (!ilk) gtk_box_pack_start(GTK_BOX(disk_liste), ae_etiket(T("Uygun disk bulunamadı (en az 4 GB gerekli). Sanal makineye bir sanal disk ekle.",
         "No suitable disk found (at least 4 GB needed). Add a virtual disk to the VM."), "ae-uyari"), FALSE, FALSE, 0);
     gtk_widget_show_all(disk_liste);
+    disk_analiz();
 }
 static GtkWidget *disk_sayfasi(void) {
-    GtkWidget *k = sayfa(T("Disk", "Disk"), T("Aether'in kurulacağı diski seç. Disk tamamen Aether'e ayrılacak.", "Choose the disk to install Aether on. The whole disk will be used."));
+    GtkWidget *k = sayfa(T("Disk", "Disk"), T("Aether'in kurulacağı diski ve nasıl kurulacağını seç.", "Choose the disk and how to install Aether."));
     disk_liste = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_box_pack_start(GTK_BOX(k), disk_liste, FALSE, FALSE, 0);
     GtkWidget *yen = gtk_button_new_with_label(T("Listeyi yenile", "Refresh list"));
     gtk_widget_set_halign(yen, GTK_ALIGN_START);
     g_signal_connect(yen, "clicked", G_CALLBACK(diskleri_doldur), NULL);
     gtk_box_pack_start(GTK_BOX(k), yen, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(k), ae_etiket(T("⚠ Seçilen diskteki TÜM veriler silinecek.", "⚠ ALL data on the selected disk will be erased."), "ae-uyari"), FALSE, FALSE, 8);
-    disk_onay = gtk_check_button_new_with_label(T("Anladım, bu diskin silinmesini onaylıyorum", "I understand, erase this disk"));
+
+    gtk_box_pack_start(GTK_BOX(k), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 4);
+    tur_yanina = gtk_radio_button_new_with_label(NULL, T("Windows'un yanına kur", "Install alongside Windows"));
+    tur_tum = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(tur_yanina), T("Bütün diski sil ve Aether'i kur", "Erase the whole disk and install Aether"));
+    g_signal_connect(tur_yanina, "toggled", G_CALLBACK(tur_tik), NULL);
+    gtk_box_pack_start(GTK_BOX(k), tur_yanina, FALSE, FALSE, 0);
+    yanina_kutu = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_widget_set_margin_start(yanina_kutu, 28);
+    GtkWidget *bs = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_box_pack_start(GTK_BOX(bs), gtk_label_new(T("Aether'e ayrılacak yer:", "Space for Aether:")), FALSE, FALSE, 0);
+    boyut_olcek = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 15, 16, 1);
+    gtk_scale_set_digits(GTK_SCALE(boyut_olcek), 0);
+    gtk_scale_set_value_pos(GTK_SCALE(boyut_olcek), GTK_POS_RIGHT);
+    g_signal_connect(boyut_olcek, "format-value", G_CALLBACK(olcek_yazisi), NULL);
+    g_signal_connect(boyut_olcek, "value-changed", G_CALLBACK(olcek_degisti), NULL);
+    gtk_box_pack_start(GTK_BOX(bs), boyut_olcek, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(yanina_kutu), bs, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(k), yanina_kutu, FALSE, FALSE, 0);
+    yanina_bilgi = ae_etiket("", "ae-alt");
+    gtk_widget_set_margin_start(yanina_bilgi, 28);
+    gtk_box_pack_start(GTK_BOX(k), yanina_bilgi, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(k), tur_tum, FALSE, FALSE, 4);
+
+    disk_uyari = ae_etiket("", "ae-uyari");
+    gtk_box_pack_start(GTK_BOX(k), disk_uyari, FALSE, FALSE, 8);
+    disk_onay = gtk_check_button_new_with_label("");
     gtk_box_pack_start(GTK_BOX(k), disk_onay, FALSE, FALSE, 0);
     diskleri_doldur();
     return k;
@@ -227,7 +342,8 @@ static void ozeti_yaz(void) {
         T("Kullanıcı:", "User:"), gtk_entry_get_text(GTK_ENTRY(e_ad)), gtk_entry_get_text(GTK_ENTRY(e_kul)),
         T("Bilgisayar adı:", "Computer name:"), gtk_entry_get_text(GTK_ENTRY(e_bil)),
         T("Disk:", "Disk:"), secili_disk ? secili_disk : "-",
-        T("\"Kur\"a bastığında disk silinecek ve Aether kurulacak. Bu birkaç dakika sürer.", "When you press \"Install\", the disk will be erased and Aether installed. This takes a few minutes."));
+        yanina_secili() ? T("\"Kur\"a bastığında Aether Windows'un yanına kurulacak. Bu birkaç dakika sürer.", "When you press \"Install\", Aether will be installed alongside Windows. This takes a few minutes.")
+                        : T("\"Kur\"a bastığında disk silinecek ve Aether kurulacak. Bu birkaç dakika sürer.", "When you press \"Install\", the disk will be erased and Aether installed. This takes a few minutes."));
     gtk_label_set_markup(GTK_LABEL(ozet_etiketi), m); g_free(m);
 }
 static GtkWidget *ozet_sayfasi(void) {
@@ -262,8 +378,10 @@ static void kurulum_bitti(GPid pid, gint st, gpointer d) {
     }
 }
 static void kurulumu_baslat(void) {
+    char kip[32] = "tum";
+    if (yanina_secili()) snprintf(kip, sizeof kip, "yanina:%.0f", gtk_range_get_value(GTK_RANGE(boyut_olcek)));
     const char *argv[] = {"doas", "/usr/libexec/aether/kur.sh", secili_disk, gtk_entry_get_text(GTK_ENTRY(e_kul)),
-        gtk_entry_get_text(GTK_ENTRY(e_ad)), gtk_entry_get_text(GTK_ENTRY(e_bil)), dil, klavye, NULL};
+        gtk_entry_get_text(GTK_ENTRY(e_ad)), gtk_entry_get_text(GTK_ENTRY(e_bil)), dil, klavye, kip, NULL};
     GPid pid; int in, out; GError *e = NULL;
     if (!g_spawn_async_with_pipes(NULL, (char **)argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
                                   NULL, NULL, &pid, &in, &out, NULL, &e)) {
@@ -325,7 +443,7 @@ static void ileri_tik(GtkButton *b, gpointer d) {
         if (!secili_disk) return;
         if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(disk_onay))) {
             GtkWidget *m = gtk_message_dialog_new(GTK_WINDOW(pencere), GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK, "%s",
-                T("Devam etmek için disk silme onay kutusunu işaretle.", "Tick the erase confirmation box to continue."));
+                T("Devam etmek için onay kutusunu işaretle.", "Tick the confirmation box to continue."));
             gtk_dialog_run(GTK_DIALOG(m)); gtk_widget_destroy(m); return;
         }
         ozeti_yaz(); git(S_OZET); break;

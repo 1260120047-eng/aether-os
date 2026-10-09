@@ -1,4 +1,4 @@
-/* Aether Mayın Tarlası — Aether 1.1 "Nebula" */
+/* Aether Mayın Tarlası — Aether 2.0 "Orion" */
 #include "aether.h"
 #include <time.h>
 

@@ -1,4 +1,4 @@
-/* Aether 1.1 "Nebula" — ortak yardımcılar */
+/* Aether 2.0 "Orion" — ortak yardımcılar */
 #ifndef AETHER_H
 #define AETHER_H
 #include <gtk/gtk.h>
@@ -7,8 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#define AETHER_SURUM   "1.1"
-#define AETHER_KODADI  "Nebula"
+#define AETHER_SURUM   "2.0"
+#define AETHER_KODADI  "Orion"
 #define AETHER_YAPIMCI "Hot Zot"   /* yalnızca Aether Hakkında penceresinde gösterilir */
 
 /* Dil: kurulumda çalışma anında değişebilir */

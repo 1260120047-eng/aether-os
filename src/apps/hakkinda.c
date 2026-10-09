@@ -13,11 +13,7 @@ static char *cpu_adi(void) {
     }
     return r ? r : g_strdup("?");
 }
-static char *alpine_surum(void) {
-    char *c = NULL;
-    if (g_file_get_contents("/etc/alpine-release", &c, NULL, NULL)) return g_strstrip(c);
-    return g_strdup("?");
-}
+static char *alpine_surum(void) { return g_strdup(""); }
 static void satir(GtkWidget *g, int i, const char *a, const char *b) {
     GtkWidget *x = gtk_label_new(a), *y = gtk_label_new(b);
     gtk_style_context_add_class(gtk_widget_get_style_context(x), "ae-alt");
@@ -53,7 +49,7 @@ int main(int argc, char **argv) {
     snprintf(disk, sizeof disk, T("%.1f GB boş / %.1f GB", "%.1f GB free / %.1f GB"),
         fs.f_bavail * (double)fs.f_frsize / 1073741824.0, fs.f_blocks * (double)fs.f_frsize / 1073741824.0);
     snprintf(sure, sizeof sure, T("%ld sa %ld dk", "%ldh %ldm"), si.uptime / 3600, si.uptime / 60 % 60);
-    snprintf(taban, sizeof taban, "Alpine Linux %s", alp);
+    snprintf(taban, sizeof taban, "Arch Linux%s", alp);
     GtkWidget *g = gtk_grid_new(); gtk_grid_set_column_spacing(GTK_GRID(g), 14); gtk_grid_set_row_spacing(GTK_GRID(g), 4);
     gtk_widget_set_halign(g, GTK_ALIGN_CENTER);
     int i = 0;
@@ -66,8 +62,8 @@ int main(int argc, char **argv) {
     satir(g, i++, T("Masaüstü", "Desktop"), "Yörünge · Aether");
     satir(g, i++, T("Mod", "Mode"), ae_canli() ? T("Canlı (RAM)", "Live (RAM)") : T("Kurulu", "Installed"));
     gtk_box_pack_start(GTK_BOX(k), g, FALSE, FALSE, 0);
-    GtkWidget *n = gtk_label_new(T("Aether, özgür yazılımlar üzerine kurulmuştur.\nLinux, Alpine, GTK ve Mesa topluluklarına teşekkürler.",
-                                   "Aether is built on free software.\nThanks to the Linux, Alpine, GTK and Mesa communities."));
+    GtkWidget *n = gtk_label_new(T("Aether, özgür yazılımlar üzerine kurulmuştur.\nLinux, Arch Linux, GTK ve Mesa topluluklarına teşekkürler.",
+                                   "Aether is built on free software.\nThanks to the Linux, Arch Linux, GTK and Mesa communities."));
     gtk_label_set_justify(GTK_LABEL(n), GTK_JUSTIFY_CENTER);
     gtk_style_context_add_class(gtk_widget_get_style_context(n), "ae-alt");
     gtk_box_pack_start(GTK_BOX(k), n, FALSE, FALSE, 10);

@@ -129,6 +129,32 @@ static GtkWidget *ekran(void) {
     satir(k, T("Çözünürlük", "Resolution"), c);
     gtk_box_pack_start(GTK_BOX(k), ae_etiket(T("Sanal makinede daha fazla çözünürlük için pencereyi büyütüp sanal makinenin ekran ayarlarını değiştirebilirsin.",
         "In a virtual machine, more resolutions may appear after changing the VM's display settings."), "ae-alt"), FALSE, FALSE, 0);
+
+    /* grafik hızlandırma durumu */
+    char *d = NULL, *cizici = NULL, *sanal = NULL; int hiz = 0;
+    if (g_spawn_command_line_sync("env LANG=C /usr/libexec/aether/grafik-ayarla durum", &d, NULL, NULL, NULL) && d) {
+        char **s = g_strsplit(d, "\n", -1);
+        for (int i = 0; s[i]; i++) {
+            char *iki = strstr(s[i], ": "); if (!iki) continue;
+            if (g_str_has_prefix(s[i], "OpenGL")) cizici = g_strdup(iki + 2);
+            else if (g_str_has_prefix(s[i], "sanal")) sanal = g_strdup(iki + 2);
+            else if (g_str_has_prefix(s[i], "3D")) hiz = strstr(iki, "açık") != NULL;
+        }
+        g_strfreev(s); g_free(d);
+    }
+    GtkWidget *gh = ae_etiket(hiz ? T("Açık", "On") : T("Kapalı (yazılımla çizim)", "Off (software rendering)"), NULL);
+    satir(k, T("Grafik hızlandırma", "Graphics acceleration"), gh);
+    if (cizici) satir(k, T("OpenGL çizici", "OpenGL renderer"), ae_etiket(cizici, "ae-alt"));
+    if (!hiz && sanal && strcmp(sanal, "none")) {
+        const char *ip = !strcmp(sanal, "oracle")
+            ? T("VirtualBox'ta açmak için makineyi kapat, Ayarlar › Ekran'da Grafik denetleyiciyi \"VMSVGA\" yap, \"3D hızlandırmayı etkinleştir\"i işaretle ve Video belleğini 128 MB'a çıkar.",
+                "To enable it in VirtualBox, shut the VM down, set Settings › Display › Graphics Controller to \"VMSVGA\", tick \"Enable 3D Acceleration\" and raise Video Memory to 128 MB.")
+            : !strcmp(sanal, "vmware")
+            ? T("VMware'de makineyi kapat, Ayarlar › Display'de \"Accelerate 3D graphics\" seçeneğini aç.", "In VMware, shut the VM down and turn on Settings › Display › \"Accelerate 3D graphics\".")
+            : T("QEMU/virt-manager'da ekran kartını \"virtio\" yap ve \"3D acceleration\" (OpenGL) seçeneğini aç.", "In QEMU/virt-manager, use the \"virtio\" video model with \"3D acceleration\" (OpenGL) enabled.");
+        gtk_box_pack_start(GTK_BOX(k), ae_etiket(ip, "ae-alt"), FALSE, FALSE, 0);
+    }
+    g_free(cizici); g_free(sanal);
     return k;
 }
 

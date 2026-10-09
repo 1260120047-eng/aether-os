@@ -13,7 +13,7 @@ sessiz=0; grep -qw quiet /proc/cmdline && sessiz=1
 yaz() { [ $sessiz = 1 ] || echo "  [aether] $*"; }
 kurtar() { echo; echo "  [aether] HATA: $*"; echo "  Kurtarma kabuğu açılıyor (çıkmak için: exit)"; setsid cttyhack sh; }
 
-ETIKET=AETHER_1_1; TORAM=1
+ETIKET=AETHER_2_0; TORAM=1
 for a in $(cat /proc/cmdline); do
   case "$a" in
     aether.etiket=*) ETIKET="${a#*=}" ;;
@@ -22,9 +22,9 @@ for a in $(cat /proc/cmdline); do
   esac
 done
 
-yaz "Aether 1.1 Nebula başlıyor…"
+yaz "Aether 2.0 Orion başlıyor…"
 # sessiz açılışta da kullanıcı bir şey görsün (konsol tty3'e yönlendirilmiş olabilir)
-ekran() { [ -c /dev/tty1 ] && printf "\033[2J\033[H\n\n    A E T H E R   1.0 \"Nebula\"\n\n    %s\n" "$*" > /dev/tty1 2>/dev/null; }
+ekran() { [ -c /dev/tty1 ] && printf "\033[2J\033[H\n\n    A E T H E R   2.0 \"Orion\"\n\n    %s\n" "$*" > /dev/tty1 2>/dev/null; }
 ekran "Aether yukleniyor, lutfen bekle...  /  Loading, please wait..."
 # Sürücüler: bulunan donanımın modüllerini yükle (coldplug) + gerekenler
 for m in $(find /sys/devices -name modalias -exec cat {} + 2>/dev/null | sort -u); do modprobe -q -b "$m" 2>/dev/null; done

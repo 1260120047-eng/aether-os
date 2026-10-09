@@ -4,3 +4,9 @@ cikti/
 *.exe
 *.res
 sdk/
+# Aether 2.0: derlenen uygulamalar
+src/apps/*
+!src/apps/*.c
+!src/apps/*.h
+!src/apps/Makefile
+src/initramfs/aether-toram

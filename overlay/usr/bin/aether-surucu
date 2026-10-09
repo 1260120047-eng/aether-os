@@ -11,20 +11,12 @@ paket_bul() {
     amdgpu) echo linux-firmware-amdgpu ;;
     radeon) echo linux-firmware-radeon ;;
     nouveau) echo linux-firmware-nvidia ;;
-    i915) echo linux-firmware-i915 ;;
-    xe) echo linux-firmware-xe ;;
-    ath10k_*) echo linux-firmware-ath10k ;;
-    ath11k_*) echo linux-firmware-ath11k ;;
-    ath12k*) echo linux-firmware-ath12k ;;
-    ath6kl_*) echo linux-firmware-ath6k ;;
-    ath9k_htc) echo linux-firmware-ath9k_htc ;;
+    i915|xe|iwlwifi|iwlmvm|iwlmld) echo linux-firmware-intel ;;
+    ath*) echo linux-firmware-atheros ;;
     mt7*|mt76*) echo linux-firmware-mediatek ;;
-    brcmfmac) echo "linux-firmware-brcm linux-firmware-cypress" ;;
-    rtw88_*) echo linux-firmware-rtw88 ;;
-    rtw89_*) echo linux-firmware-rtw89 ;;
-    rtl8*|rtlwifi*|rtl_*) echo linux-firmware-rtlwifi ;;
-    r8169) echo linux-firmware-rtl_nic ;;
-    bnx2|bnx2x) echo "linux-firmware-$1" ;;
+    brcmfmac|brcmsmac) echo linux-firmware-broadcom ;;
+    rtw88_*|rtw89_*|rtl8*|rtlwifi*|rtl_*|r8169) echo linux-firmware-realtek ;;
+    bnx2|bnx2x|qed*|qla*) echo linux-firmware-qlogic ;;
     snd_sof*|snd_soc_avs|snd_soc_skl*) echo sof-firmware ;;
     *) return 1 ;;
   esac
@@ -33,7 +25,7 @@ paket_bul() {
 # paketin kurulu sayılması: Intel Wi-Fi ve bazı Wi-Fi firmware'leri ISO'ya parça parça gömülü
 kurulu() {
   for p in $1; do
-    apk info -e "$p" >/dev/null 2>&1 && continue
+    pacman -Q "$p" >/dev/null 2>&1 && continue
     [ -f "/usr/share/aether/firmware/$p" ] && continue
     return 1
   done
@@ -103,8 +95,10 @@ case "$1" in
       case "$p" in linux-firmware-*|sof-firmware) ;; *) echo "İzin verilmeyen paket: $p"; exit 2 ;; esac
     done
     [ "$(id -u)" = 0 ] || exec doas "$0" kur "$@"
-    echo "› apk add $*"
-    apk update -q && apk add --no-progress "$@" || exit 1
+    /usr/libexec/aether/anahtar-bekle
+    echo "› pacman -S $*"
+    # ISO'ya parça parça gömülü firmware dosyalarının üzerine yazılabilsin
+    pacman -Sy --needed --noconfirm --overwrite '/usr/lib/firmware/*' "$@" || exit 1
     # firmware'i bekleyen sürücüleri yeniden yükle
     for d in /sys/bus/pci/devices/*; do
       [ -e "$d/driver" ] && continue

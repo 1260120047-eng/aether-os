@@ -1,6 +1,7 @@
-# Aether ISO'sunu her değişiklikte sıfırdan derler.
+# Aether 2.0 "Orion" ISO'sunu her değişiklikte sıfırdan derler (Arch Linux ortamında).
 # - main dalına her gönderimde: ISO, işin "Artifacts" bölümünden indirilebilir (14 gün saklanır)
-# - "1.1" gibi bir etiket (tag) gönderildiğinde: ISO o sürümün Releases sayfasına da eklenir
+# - "2.0" gibi bir etiket (tag) gönderildiğinde: ISO o sürümün Releases sayfasına da eklenir
+# 1.1 "Nebula" (Alpine tabanlı) kaynakları "1.1" dalında.
 name: ISO
 
 on:
@@ -21,67 +22,46 @@ jobs:
   iso:
     name: ISO derle
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - name: Kodu al
         uses: actions/checkout@v5
 
-      - name: Alpine 3.22 derleme ortamı
+      - name: Yer aç
         run: |
-          R="$HOME/alpine"
-          M=https://dl-cdn.alpinelinux.org/alpine/v3.22
-          F=$(curl -fsSL --retry 5 $M/releases/x86_64/latest-releases.yaml | awk '/file: alpine-minirootfs-.*x86_64.tar.gz/{print $2; exit}')
-          echo "minirootfs: $F"
-          mkdir -p "$R"
-          curl -fsSL --retry 5 "$M/releases/x86_64/$F" | sudo tar xz -C "$R"
-          printf '%s\n' "$M/main" "$M/community" | sudo tee "$R/etc/apk/repositories" >/dev/null
-          sudo cp /etc/resolv.conf "$R/etc/resolv.conf"
-          for m in proc sys dev dev/pts; do sudo mkdir -p "$R/$m"; sudo mount --bind "/$m" "$R/$m"; done
-          sudo mkdir -p "$R/repo" "$R/work"
-          sudo mount --bind "$GITHUB_WORKSPACE" "$R/repo"
-          sudo ln -sfn /repo/betikler "$R/s"
-          sudo ln -sfn /repo/overlay "$R/work/overlay"
-          sudo ln -sfn /repo/src "$R/work/src"
-          echo "ALPINE=$R" >> "$GITHUB_ENV"
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
 
-      - name: Derleme araçları
-        run: sudo chroot "$ALPINE" /bin/sh -c 'apk update -q && sh /s/tools.sh && sh /s/devtools.sh'
-
-      - name: Kök sistem
-        run: sudo chroot "$ALPINE" /bin/sh /s/rootfs.sh
-
-      - name: WebKit (Eclipse)
-        run: sudo chroot "$ALPINE" /bin/sh /s/webkit.sh
-
-      - name: ISO
-        run: |
-          sudo chroot "$ALPINE" /bin/sh -c 'sh /s/build.sh && test -s /work/cikti/aether-1.1-nebula.iso && cd /work/cikti && sha256sum aether-1.1-nebula.iso > aether-1.1-nebula.iso.sha256'
-          cat "$ALPINE/work/cikti/aether-1.1-nebula.iso.sha256"
-
-      - name: Eclipse (Windows)
-        run: |
-          sudo mkdir -p "$ALPINE/work/win/src"
-          sudo cp -a windows/. "$ALPINE/work/win/src/"
-          sudo chroot "$ALPINE" /bin/sh -c 'set -e
-            apk add -q curl zip imagemagick rsvg-convert
-            sh /work/win/src/win.sh
-            sh /work/win/src/winbuild.sh
-            P=/tmp/paket/Eclipse; mkdir -p $P
-            cp /work/win/src/Eclipse.exe /work/win/src/BENIOKU.txt /work/win/sdk/build/native/x64/WebView2Loader.dll $P/
-            cd /tmp/paket && zip -q -9 -r /work/cikti/Eclipse-Windows.zip Eclipse
-            cd /work/cikti && sha256sum Eclipse-Windows.zip > Eclipse-Windows.zip.sha256'
-          cat "$ALPINE/work/cikti/Eclipse-Windows.zip.sha256"
-
-      - name: ISO'yu dışarı çıkar
+      - name: ISO (Arch Linux konteynerinde)
         run: |
           mkdir -p cikti
-          sudo cp "$ALPINE"/work/cikti/aether-1.1-nebula.iso* "$ALPINE"/work/cikti/Eclipse-Windows.zip* cikti/
+          docker run --rm --privileged -v "$GITHUB_WORKSPACE":/repo archlinux:latest /bin/bash -c '
+            set -e
+            # konteyner imajı yer kazanmak için dil dosyalarını ve belgeleri atlıyor; Aether için hepsi gerekli
+            sed -i "/^NoExtract/d" /etc/pacman.conf
+            grep -q "^DisableSandboxFilesystem" /etc/pacman.conf || sed -i "/^\[options\]/a DisableSandboxFilesystem\nDisableSandboxSyscalls" /etc/pacman.conf
+            pacman-key --init >/dev/null
+            pacman-key --populate archlinux >/dev/null
+            pacman -Syu --noconfirm -q arch-install-scripts python >/dev/null
+            mkdir -p /work
+            ln -s /repo/betikler /work/s
+            ln -s /repo/overlay /work/overlay
+            ln -s /repo/src /work/src
+            bash /work/s/rootfs.sh
+            bash /work/s/build.sh
+            test -s /work/cikti/aether-2.0-orion.iso
+            cp /work/cikti/aether-2.0-orion.iso /repo/cikti/
+          '
           sudo chown -R "$(id -u)" cikti
+          cd cikti && sha256sum aether-2.0-orion.iso | tee aether-2.0-orion.iso.sha256
+
+      - name: Özet
+        run: |
           ls -la cikti
           {
-            echo "### Aether ISO"
+            echo "### Aether 2.0 ISO"
             echo '```'
-            cat cikti/aether-1.1-nebula.iso.sha256 cikti/Eclipse-Windows.zip.sha256
+            cat cikti/aether-2.0-orion.iso.sha256
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -89,6 +69,54 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aether-iso
+          path: cikti/
+          retention-days: 14
+          compression-level: 0
+
+      - name: Sürüme ekle (yalnızca etiketlerde)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cikti/*
+
+  windows:
+    name: Eclipse (Windows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v5
+
+      - name: Alpine derleme ortamı ve Eclipse.exe
+        run: |
+          R="$HOME/alpine"
+          M=https://dl-cdn.alpinelinux.org/alpine/v3.22
+          F=$(curl -fsSL --retry 5 $M/releases/x86_64/latest-releases.yaml | awk '/file: alpine-minirootfs-.*x86_64.tar.gz/{print $2; exit}')
+          mkdir -p "$R"
+          curl -fsSL --retry 5 "$M/releases/x86_64/$F" | sudo tar xz -C "$R"
+          printf '%s\n' "$M/main" "$M/community" | sudo tee "$R/etc/apk/repositories" >/dev/null
+          sudo cp /etc/resolv.conf "$R/etc/resolv.conf"
+          for m in proc sys dev dev/pts; do sudo mkdir -p "$R/$m"; sudo mount --bind "/$m" "$R/$m"; done
+          sudo mkdir -p "$R/work/win/src" "$R/work/cikti"
+          sudo cp -a windows/. "$R/work/win/src/"
+          sudo chroot "$R" /bin/sh -c 'set -e
+            apk update -q
+            apk add -q curl zip imagemagick rsvg-convert
+            sh /work/win/src/win.sh
+            sh /work/win/src/winbuild.sh
+            P=/tmp/paket/Eclipse; mkdir -p $P
+            cp /work/win/src/Eclipse.exe /work/win/src/BENIOKU.txt /work/win/sdk/build/native/x64/WebView2Loader.dll $P/
+            cd /tmp/paket && zip -q -9 -r /work/cikti/Eclipse-Windows.zip Eclipse
+            cd /work/cikti && sha256sum Eclipse-Windows.zip > Eclipse-Windows.zip.sha256'
+          mkdir -p cikti
+          sudo cp "$R"/work/cikti/Eclipse-Windows.zip* cikti/
+          sudo chown -R "$(id -u)" cikti
+          cat cikti/Eclipse-Windows.zip.sha256 | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Paketi yükle (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclipse-windows
           path: cikti/
           retention-days: 14
           compression-level: 0

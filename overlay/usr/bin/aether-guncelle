@@ -9,13 +9,14 @@ if grep -q aether.canli /proc/cmdline; then
 fi
 SU=""; [ "$(id -u)" = 0 ] || SU=doas
 printf "${G}› %s${R}\n" "$(t 'Paket listesi yenileniyor…' 'Refreshing package lists…')"
-if ! $SU apk update; then
+/usr/libexec/aether/anahtar-bekle
+if ! $SU pacman -Sy; then
   printf "\n${K}✘ %s${R}\n" "$(t 'Depoya ulaşılamadı. İnternet bağlantını kontrol et.' 'Could not reach the repository. Check your internet connection.')"; exit 1
 fi
 printf "\n${G}› %s${R}\n" "$(t 'Paketler güncelleniyor…' 'Upgrading packages…')"
-if $SU apk upgrade --available; then
+if $SU pacman -Su --noconfirm; then
   printf "\n${Y}✔ %s${R}\n\n" "$(t 'Aether güncel!' 'Aether is up to date!')"
-  if [ ! -d "/lib/modules/$(uname -r)" ]; then
+  if [ ! -d "/usr/lib/modules/$(uname -r)" ]; then
     printf "${G}  %s${R}\n\n" "$(t 'Çekirdek güncellendi; yeniden başlatman önerilir.' 'The kernel was updated; please restart.')"
   fi
 else

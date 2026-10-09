@@ -1,0 +1,17 @@
+#!/bin/sh
+# Aether canlı oturum hazırlığı: "canli" kullanıcısı, şifresiz yönetici yetkisi, otomatik giriş
+DIL=tr; grep -q aether.dil=en /proc/cmdline && DIL=en
+if ! id canli >/dev/null 2>&1; then
+  useradd -m -s /bin/bash -c "Aether Canlı" -G wheel,audio,video,input,optical,storage,users canli
+  passwd -d canli >/dev/null 2>&1
+fi
+mkdir -p /home/canli/.config/aether
+sed "s/^DIL=.*/DIL=$DIL/; s/^KARSILAMA=.*/KARSILAMA=0/; s/^KILIT_DK=.*/KILIT_DK=0/" /etc/aether/ayarlar > /home/canli/.config/aether/ayarlar
+chown -R canli:canli /home/canli
+grep -q '^permit nopass canli' /etc/doas.conf 2>/dev/null || echo "permit nopass canli" >> /etc/doas.conf
+printf 'canli ALL=(ALL:ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/canli && chmod 440 /etc/sudoers.d/canli
+mkdir -p /etc/lightdm/lightdm.conf.d
+printf '[Seat:*]\nautologin-user=canli\nautologin-session=aether\nautologin-user-timeout=0\n' > /etc/lightdm/lightdm.conf.d/50-canli.conf
+groupadd -rf autologin
+gpasswd -a canli autologin >/dev/null
+exit 0

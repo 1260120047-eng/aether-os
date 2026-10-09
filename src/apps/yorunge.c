@@ -12,6 +12,7 @@
  */
 #define _GNU_SOURCE
 #include <X11/Xlib.h>
+#include <X11/extensions/Xrandr.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
@@ -865,6 +866,25 @@ static void etkinlestir(Istemci *c) {
   odakla(c); one_al(c);
 }
 
+/* çözünürlük ya da çalışma alanı değişince pencereler ekranda kalsın: gerekirse küçült, sonra içeri kaydır */
+static void ekrana_sigdir(void) {
+  for (int i = 0; i < ns; i++) {
+    Istemci *c = yigin[i];
+    if (c->ozel || c->buyuk || c->tam) continue;
+    int b = c->dekor ? kenar_k : 0, th = c->dekor ? TH : 0;
+    int enw = calisma.w - 2 * b, enh = calisma.h - th - 2 * b;
+    int w = MIN(c->w, enw), h = MIN(c->h, enh);
+    if (w != c->w || h != c->h) { boyut_sinirla(c, &w, &h); c->w = MIN(w, enw); c->h = MIN(h, enh); }
+    int sol = calisma.x + b, ust = calisma.y + th + b;
+    int sag = calisma.x + calisma.w - b, alt = calisma.y + calisma.h - b;
+    if (c->x + c->w > sag) c->x = sag - c->w;
+    if (c->y + c->h > alt) c->y = alt - c->h;
+    if (c->x < sol) c->x = sol;
+    if (c->y < ust) c->y = ust;
+    yerlestir(c);
+  }
+}
+
 static void calisma_hesapla(void) {
   long l = 0, r = 0, u = 0, a = 0;
   for (int i = 0; i < ns; i++) if (yigin[i]->ozel) {
@@ -875,6 +895,7 @@ static void calisma_hesapla(void) {
   long wa[4] = { calisma.x, calisma.y, calisma.w, calisma.h };
   ozellik_ayarla(root, NET_WORKAREA, XA_CARDINAL, 32, wa, 4);
   for (int i = 0; i < ns; i++) if (yigin[i]->buyuk || yigin[i]->tam) yerlestir(yigin[i]);
+  ekrana_sigdir();
 }
 
 /* ---------- yönetim ---------- */
@@ -891,7 +912,9 @@ static void yonet(Window w, XWindowAttributes *wa) {
   if (XGetTransientForHint(dpy, w, &g) && g != None && g != root && g != w) c->gecici = g;
   c->dekor = 1;
   Atom tr = c->tur;
-  if (tr == A[NET_WM_WINDOW_TYPE_DOCK] || tr == A[NET_WM_WINDOW_TYPE_DESKTOP]) { c->ozel = 1; c->dekor = 0; c->odaksiz = 1; }
+  if (tr == A[NET_WM_WINDOW_TYPE_DOCK]) { c->ozel = 1; c->dekor = 0; c->odaksiz = 1; }
+  /* masaüstü (aether-masaustu): çerçevesiz, en altta, listelerde yok; ama tıklanınca klavye odağı alabilsin (F2, Del, Enter) */
+  if (tr == A[NET_WM_WINDOW_TYPE_DESKTOP]) { c->ozel = 1; c->dekor = 0; }
   if (tr == A[NET_WM_WINDOW_TYPE_SPLASH] || tr == A[NET_WM_WINDOW_TYPE_NOTIFICATION] || tr == A[NET_WM_WINDOW_TYPE_TOOLTIP] ||
       tr == A[NET_WM_WINDOW_TYPE_MENU] || tr == A[NET_WM_WINDOW_TYPE_DROPDOWN_MENU] || tr == A[NET_WM_WINDOW_TYPE_POPUP_MENU] ||
       tr == A[NET_WM_WINDOW_TYPE_COMBO] || tr == A[NET_WM_WINDOW_TYPE_DND]) c->dekor = 0;
@@ -929,7 +952,7 @@ static void yonet(Window w, XWindowAttributes *wa) {
   if (wa->map_state == IsViewable) {
     /* yöneticiden önce açılmış pencere (ör. Yörünge yeniden başladı): yerinde kalsın */
     c->x = wa->x; c->y = wa->y;
-  } else if (p && !p->kucuk) {
+  } else if (p && !p->kucuk && !p->ozel) {   /* masaüstünün pencereleri ekranın ortasında açılsın */
     c->x = p->gx + (p->gw - c->w) / 2; c->y = p->gy + (p->gh - c->h) / 2;
   } else if (konumlu) {
     if (!((sh2.flags & PWinGravity) && sh2.win_gravity == StaticGravity)) { c->x = wa->x + b; c->y = wa->y + th + b; }
@@ -1450,10 +1473,11 @@ static const struct { unsigned mod; KeySym ks; int eylem; const char *komut; } k
   { Mod4Mask, XK_space, E_MENU_KOK, NULL },
   { ControlMask | Mod1Mask, XK_t, E_CALISTIR, "aether-terminal" },
   { Mod4Mask, XK_Return, E_CALISTIR, "aether-terminal" },
-  { Mod4Mask, XK_e, E_CALISTIR, "pcmanfm" },
+  { Mod4Mask, XK_e, E_CALISTIR, "aether-dosyalar" },
   { Mod4Mask, XK_i, E_CALISTIR, "aether-ayarlar" },
   { Mod4Mask, XK_l, E_CALISTIR, "aether-guc kilitle" },
   { ControlMask | Mod1Mask, XK_Delete, E_MENU_GUC, NULL },
+  { ControlMask | ShiftMask, XK_Escape, E_CALISTIR, "aether-gorev" },
   { 0, XK_Print, E_CALISTIR, "aether-ekran-goruntusu" },
   { ShiftMask, XK_Print, E_CALISTIR, "aether-ekran-goruntusu --alan" },
   { Mod1Mask, XK_F4, E_KAPAT, NULL },
@@ -1835,14 +1859,9 @@ static void isle(XEvent *e) {
       if (e->xconfigure.window == root && (e->xconfigure.width != sw || e->xconfigure.height != sh)) {
         sw = e->xconfigure.width; sh = e->xconfigure.height;
         long g[2] = { sw, sh }; ozellik_ayarla(root, NET_DESKTOP_GEOMETRY, XA_CARDINAL, 32, g, 2);
+        XRRUpdateConfiguration((XEvent *)e);
         calisma_hesapla();
-        for (int i = 0; i < ns; i++) {
-          Istemci *c = yigin[i];
-          if (c->ozel) continue;
-          if (c->x > sw - 40) c->x = MAX(0, sw - c->w);
-          if (c->y > sh - 40) c->y = MAX(TH, sh - c->h);
-          yerlestir(c);
-        }
+        ekrana_sigdir();
       }
       break;
     case ButtonPress: ev_buton(&e->xbutton); break;

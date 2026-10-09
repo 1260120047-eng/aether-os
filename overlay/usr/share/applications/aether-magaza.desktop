@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Uygulama Mağazası
+Name[en]=App Store
+Comment=Uygulama bul, yükle ve kaldır
+Comment[en]=Find, install and remove apps
+Exec=aether-magaza %u
+Icon=aether-magaza
+Categories=System;PackageManager;
+Keywords=store;install;app;uygulama;yükle;mağaza;

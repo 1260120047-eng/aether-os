@@ -10,17 +10,18 @@ case "$DIL" in
   *)  export LANG=tr_TR.UTF-8 ;;
 esac
 export XDG_CURRENT_DESKTOP=Aether XDG_SESSION_DESKTOP=aether DESKTOP_SESSION=aether
-export XDG_DATA_DIRS=/usr/local/share:/usr/share
+# Flatpak uygulamaları da menüde ve simge temasında görünsün
+export XDG_DATA_DIRS="$HOME/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share"
 
 # Kullanıcı klasörleri (dile göre)
 if [ "$DIL" = en ]; then
-  B=Documents; D=Downloads; M=Music; R=Pictures; V=Videos; O=Games
+  B=Documents; D=Downloads; M=Music; R=Pictures; V=Videos; O=Games; MS=Desktop
 else
-  B=Belgeler; D=İndirilenler; M=Müzik; R=Resimler; V=Videolar; O=Oyunlar
+  B=Belgeler; D=İndirilenler; M=Müzik; R=Resimler; V=Videolar; O=Oyunlar; MS=Masaüstü
 fi
-for k in "$B" "$D" "$M" "$R" "$V" "$O"; do mkdir -p "$HOME/$k"; done
+for k in "$B" "$D" "$M" "$R" "$V" "$O" "$MS"; do mkdir -p "$HOME/$k"; done
 cat > "$HOME/.config/user-dirs.dirs" <<EOF
-XDG_DESKTOP_DIR="\$HOME"
+XDG_DESKTOP_DIR="\$HOME/$MS"
 XDG_DOCUMENTS_DIR="\$HOME/$B"
 XDG_DOWNLOAD_DIR="\$HOME/$D"
 XDG_MUSIC_DIR="\$HOME/$M"
@@ -28,22 +29,38 @@ XDG_PICTURES_DIR="\$HOME/$R"
 XDG_VIDEOS_DIR="\$HOME/$V"
 EOF
 
-# D-Bus oturum veriyolu: bildirimler ve uygulamalar için (X kapanınca o da kapanır)
-if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
-  eval "$(dbus-launch --sh-syntax --exit-with-x11)"
-  export DBUS_SESSION_BUS_ADDRESS
+# D-Bus oturum veriyolu: systemd kullanıcı oturumunun veriyolunu kullan
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] && [ -S "$XDG_RUNTIME_DIR/bus" ]; then
+  export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 fi
+# D-Bus ile kendiliğinden başlayan programlar (bildirimler) ekranı bilsin
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY LANG XDG_CURRENT_DESKTOP XDG_DATA_DIRS 2>/dev/null
 
 aether-uygula --oturum
+
+# Sanal makine yardımcıları: pencere boyutuna göre çözünürlük, ortak pano, sürükle-bırak
+case "$(systemd-detect-virt --vm 2>/dev/null)" in
+  # arka planda: biri takılırsa masaüstünün açılmasını bekletmesin
+  oracle) command -v VBoxClient-all >/dev/null && ( timeout 20 VBoxClient-all >/dev/null 2>&1 & ) ;;
+  vmware) command -v vmware-user-suid-wrapper >/dev/null && ( vmware-user-suid-wrapper >/dev/null 2>&1 & ) ;;
+  qemu|kvm) [ -e /dev/virtio-ports/com.redhat.spice.0 ] && command -v spice-vdagent >/dev/null && ( spice-vdagent >/dev/null 2>&1 & ) ;;
+esac
 xsettingsd >/dev/null 2>&1 &
 aether-bosta >/dev/null 2>&1 &
 (sleep 2; aether-ses giris) &
 
 if grep -q aether.canli /proc/cmdline; then
+  # canlı oturumda masaüstünde "Aether'i Diske Kur" kısayolu
+  K="$HOME/$MS/aether-kurulum.desktop"
+  [ -f "$K" ] || { cp /usr/share/applications/aether-kurulum.desktop "$K" && chmod +x "$K"; }
   (sleep 1; aether-hosgeldin) &
 elif [ "$KARSILAMA" = 1 ]; then
   (sleep 1; aether-hosgeldin) &
 fi
+
+# Masaüstü (duvar kağıdı, simgeler, sağ tık menüsü): çökerse yeniden başlat
+( while :; do aether-masaustu; [ $? -ge 128 ] || break; sleep 1; done ) &
 
 # Görev çubuğu: çökerse yeniden başlat, oturum bitince dur
 ( while :; do yorunge-panel; [ $? -ge 128 ] || break; sleep 1; done ) &

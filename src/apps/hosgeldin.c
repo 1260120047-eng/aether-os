@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     gtk_box_pack_start(GTK_BOX(ust), ae_logo(72), FALSE, FALSE, 0);
     GtkWidget *bk = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_box_pack_start(GTK_BOX(bk), ae_etiket("A E T H E R", "ae-baslik"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(bk), ae_etiket("1.1 · Nebula", "ae-alt"), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(bk), ae_etiket("2.0 · Orion", "ae-alt"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(ust), bk, FALSE, FALSE, 0);
     gtk_box_set_center_widget(GTK_BOX(ust), NULL);
     gtk_box_pack_start(GTK_BOX(k), ust, FALSE, FALSE, 0);
@@ -53,7 +53,8 @@ int main(int argc, char **argv) {
     kisayol(g, 4, "Super+L", T("Ekranı kilitle", "Lock screen"));
     kisayol(g, 5, "Alt+Tab · Alt+F4", T("Pencere değiştir · kapat", "Switch · close window"));
     kisayol(g, 6, "Print", T("Ekran görüntüsü (~/Resimler)", "Screenshot (~/Pictures)"));
-    kisayol(g, 7, "aether-info", T("Terminalde sistem bilgisi", "System info in terminal"));
+    kisayol(g, 7, "Ctrl+Shift+Esc", T("Görev Yöneticisi", "Task Manager"));
+    kisayol(g, 8, "aether-info", T("Terminalde sistem bilgisi", "System info in terminal"));
     gtk_box_pack_start(GTK_BOX(kart), g, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(k), kart, FALSE, FALSE, 0);
 

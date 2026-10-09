@@ -27,7 +27,8 @@ static void strut_ayarla(void) {
   GdkWindow *gw = gtk_widget_get_window(pencere);
   if (!gw) return;
   GdkScreen *s = gdk_screen_get_default();
-  int sw = WidthOfScreen(gdk_x11_screen_get_xscreen(s)), sh = HeightOfScreen(gdk_x11_screen_get_xscreen(s));
+  /* Xlib'in WidthOfScreen değeri çözünürlük değişince güncellenmiyor; GDK'nınki güncel */
+  int sw = gdk_screen_get_width(s), sh = gdk_screen_get_height(s);
   gtk_window_move(GTK_WINDOW(pencere), 0, sh - YUKSEKLIK);
   gtk_window_resize(GTK_WINDOW(pencere), sw, YUKSEKLIK);
   gtk_widget_set_size_request(pencere, sw, YUKSEKLIK);
@@ -37,7 +38,13 @@ static void strut_ayarla(void) {
   XChangeProperty(d, w, XInternAtom(d, "_NET_WM_STRUT", False), XA_CARDINAL, 32, PropModeReplace, (unsigned char *)st, 4);
 }
 
-static void boyut_degisti(GdkScreen *s, gpointer d) { (void)s; (void)d; strut_ayarla(); }
+static gboolean strut_gecikmeli(gpointer d) { (void)d; strut_ayarla(); return G_SOURCE_REMOVE; }
+static void boyut_degisti(GdkScreen *s, gpointer d) {
+  (void)s; (void)d;
+  strut_ayarla();
+  /* bazı sürücüler boyutu iki adımda bildiriyor; kısa süre sonra bir kez daha yerleş */
+  g_timeout_add(400, strut_gecikmeli, NULL);
+}
 
 /* ---------- Aether menü düğmesi: Yörünge'ye mesaj gönder ---------- */
 static void yorunge_menu(int x, int y, int tur) {
@@ -123,6 +130,30 @@ static gboolean gorev_bas(GtkWidget *b, GdkEventButton *e, gpointer v) {
   gtk_widget_show_all(m);
   g_signal_connect(m, "deactivate", G_CALLBACK(gtk_widget_destroy), NULL);
   gtk_menu_popup_at_widget(GTK_MENU(m), GTK_WIDGET(b), GDK_GRAVITY_NORTH_WEST, GDK_GRAVITY_SOUTH_WEST, (GdkEvent *)e);
+  return TRUE;
+}
+
+/* görev çubuğunun boş yerine sağ tık (Windows gibi) */
+static void m_gorev_yon(GtkMenuItem *i, gpointer v) { (void)i; (void)v; g_spawn_command_line_async("aether-gorev", NULL); }
+static void m_masaustu(GtkMenuItem *i, gpointer v) {
+  (void)i; (void)v;
+  WnckScreen *s = wnck_screen_get_default();
+  wnck_screen_toggle_showing_desktop(s, !wnck_screen_get_showing_desktop(s));
+}
+static void m_ayarlar(GtkMenuItem *i, gpointer v) { (void)i; (void)v; g_spawn_command_line_async("aether-ayarlar", NULL); }
+static gboolean panel_bas(GtkWidget *w, GdkEventButton *e, gpointer v) {
+  (void)w; (void)v;
+  if (e->type != GDK_BUTTON_PRESS || e->button != 3) return FALSE;
+  GtkWidget *m = gtk_menu_new(), *o;
+  o = gtk_menu_item_new_with_label(T("Görev Yöneticisi", "Task Manager"));
+  g_signal_connect(o, "activate", G_CALLBACK(m_gorev_yon), NULL); gtk_menu_shell_append(GTK_MENU_SHELL(m), o);
+  gtk_menu_shell_append(GTK_MENU_SHELL(m), gtk_separator_menu_item_new());
+  o = gtk_menu_item_new_with_label(T("Masaüstünü göster", "Show the desktop"));
+  g_signal_connect(o, "activate", G_CALLBACK(m_masaustu), NULL); gtk_menu_shell_append(GTK_MENU_SHELL(m), o);
+  o = gtk_menu_item_new_with_label(T("Ayarlar", "Settings"));
+  g_signal_connect(o, "activate", G_CALLBACK(m_ayarlar), NULL); gtk_menu_shell_append(GTK_MENU_SHELL(m), o);
+  gtk_widget_show_all(m);
+  gtk_menu_popup_at_pointer(GTK_MENU(m), (GdkEvent *)e);
   return TRUE;
 }
 
@@ -472,9 +503,12 @@ int main(int argc, char **argv) {
   gtk_box_pack_end(GTK_BOX(kutu), ses_dugme, FALSE, FALSE, 0);
   gtk_box_pack_end(GTK_BOX(kutu), ag_dugme, FALSE, FALSE, 0);
 
+  gtk_widget_add_events(pencere, GDK_BUTTON_PRESS_MASK);
+  g_signal_connect(pencere, "button-press-event", G_CALLBACK(panel_bas), NULL);
   gtk_widget_realize(pencere);
   strut_ayarla();
   g_signal_connect(gdk_screen_get_default(), "size-changed", G_CALLBACK(boyut_degisti), NULL);
+  g_signal_connect(gdk_screen_get_default(), "monitors-changed", G_CALLBACK(boyut_degisti), NULL);
   gtk_widget_show_all(pencere);
   if (ses_var) { ses_oku(); ses_simgesi(); }
   /* amixer yoksa ya da ses kartı yoksa simgeyi gösterme */

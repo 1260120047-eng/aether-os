@@ -1,0 +1,13 @@
+[Unit]
+Description=Aether canlı oturum hazırlığı
+ConditionKernelCommandLine=aether.canli
+After=local-fs.target systemd-sysusers.service
+Before=display-manager.service lightdm.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/aether/canli-hazirla
+
+[Install]
+WantedBy=multi-user.target

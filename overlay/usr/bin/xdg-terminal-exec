@@ -1,0 +1,3 @@
+#!/bin/sh
+# xdg-terminal-exec — "Terminalde çalıştır" isteyen uygulamalar (Terminal=true) Aether Terminal ile açılsın
+exec aether-terminal -e "$@"

@@ -37,6 +37,9 @@ ICONS = {
  "aether-yeniden": '''<path d="M96 64 A32 32 0 1 1 84 39" %s/><path d="M86 22 V42 H66" %s/>''' % (W, W),
  "aether-kapat": '''<path d="M44 40 A32 32 0 1 0 84 40" %s/><path d="M64 24 V62" %s/>''' % (W, W),
  "aether-eclipse": '''<circle cx="64" cy="64" r="36" fill="#fff"/><circle cx="80" cy="54" r="34" fill="#2b1f6b"/><circle cx="64" cy="64" r="36" fill="none" stroke="#fff" stroke-width="3"/><path d="M98 22 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#fff"/>''',
+ "aether-gorev": '''<rect x="22" y="28" width="84" height="72" %s/><path d="M30 74 H46 L54 52 L66 88 L76 62 L82 74 H98" stroke="#fff" stroke-width="6" fill="none" stroke-linejoin="round"/>''' % W,
+ "aether-magaza": '''<path d="M30 46 H98 L92 104 H36 Z" %s/><path d="M48 54 V40 A16 16 0 0 1 80 40 V54" %s/>''' % (W, W),
+ "aether-oyun": '''<rect x="18" y="46" width="92" height="46" %s/><path d="M36 69H54 M45 60V78" %s/><circle cx="80" cy="64" r="4" fill="#fff"/><circle cx="90" cy="74" r="4" fill="#fff"/><path d="M70 18 L58 40 H70 L62 56" stroke="#c9b8ff" stroke-width="5" fill="none"/>''' % (W, W),
  "aether-motor": '''<path d="M64 22 L100 43 V85 L64 106 L28 85 V43Z" %s/><path d="M28 43 L64 64 L100 43 M64 64V106" stroke="#c9b8ff" stroke-width="4" fill="none"/>''' % W,
 }
 for name, body in ICONS.items():

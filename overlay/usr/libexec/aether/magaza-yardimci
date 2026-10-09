@@ -1,0 +1,30 @@
+#!/bin/sh
+# Uygulama Mağazası'nın yönetici işleri (sudo ile çalışır)
+#   magaza-yardimci kur PAKET...     sistemi günceller ve paketleri kurar (Arch'ta kısmi güncelleme yapılmaz)
+#   magaza-yardimci kaldir PAKET...  paketi ve yalnızca onun için kurulmuş bağımlılıkları kaldırır
+#   magaza-yardimci yenile           paket listelerini yeniler
+#   magaza-yardimci guncelle         bütün sistemi günceller
+set -e
+exec 2>&1
+[ "$(id -u)" = 0 ] || { echo "root gerekli" >&2; exit 1; }
+islem=$1; shift || true
+for p in "$@"; do
+  case "$p" in *[!a-z0-9@._+-]*|-*|'') echo "Geçersiz paket adı: $p" >&2; exit 2 ;; esac
+done
+/usr/libexec/aether/anahtar-bekle
+# başka bir pacman çalışıyorsa bekle
+while [ -e /var/lib/pacman/db.lck ] && pgrep -x pacman >/dev/null; do sleep 1; done
+P="pacman --noconfirm --noprogressbar --color never"
+case "$islem" in
+  kur)      [ $# -gt 0 ] || exit 2; $P -Syu --needed "$@" ;;
+  kaldir)
+    [ $# -gt 0 ] || exit 2
+    # Aether'in kendi parçaları kaldırılamaz
+    for p in "$@"; do
+      grep -qx "$p" /usr/share/aether/temel-paketler 2>/dev/null && { echo "Bu paket sistemin bir parçası: $p" >&2; exit 3; }
+    done
+    $P -Rns "$@" ;;
+  yenile)   $P -Sy ;;
+  guncelle) $P -Syu ;;
+  *) echo "Kullanım: magaza-yardimci kur|kaldir|yenile|guncelle [PAKET...]" >&2; exit 2 ;;
+esac

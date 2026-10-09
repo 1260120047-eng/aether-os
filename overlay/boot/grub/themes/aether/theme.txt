@@ -1,4 +1,4 @@
-# Aether 1.1 "Nebula" GRUB teması
+# Aether 2.0 "Orion" GRUB teması
 title-text: ""
 desktop-image: "arkaplan.png"
 desktop-color: "#05081a"

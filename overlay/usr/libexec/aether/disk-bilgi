@@ -1,0 +1,66 @@
+#!/bin/sh
+# disk-bilgi DISK — kurulum programı için diskin durumu (root olarak çalışır)
+# Çıktı ANAHTAR=değer satırlarıdır:
+#   UEFI        1: bilgisayar UEFI ile açılmış
+#   TABLO       gpt | dos | yok
+#   SEKTOR      mantıksal sektör boyutu (bayt)
+#   BOS         diskteki en büyük boş alan (bayt) · BOS_BAS başlangıç sektörü · BOS_SEK sektör sayısı
+#   ESP         EFI sistem bölümü (varsa)
+#   WINDOWS     Windows'un kurulu olduğu NTFS bölümü (varsa) · WIN_NO bölüm numarası
+#   WIN_BOYUT   bölüm boyutu (bayt) · WIN_MIN küçültülebileceği en küçük boyut (bayt)
+#   WIN_DURUM   tamam | uyku (hazırda bekletme/Hızlı Başlatma) | kirli | bitlocker | okunamadi
+#   WIN_BOOT    MBR (BIOS) kurulumlarında bootmgr'ın bulunduğu bölüm
+#   BOLUM_SAYI  bölüm sayısı
+set -u
+D=$1
+[ -b "$D" ] || { echo "HATA=disk yok"; exit 1; }
+ad=$(basename "$D")
+echo "UEFI=$([ -d /sys/firmware/efi ] && echo 1 || echo 0)"
+TABLO=$(blkid -p -o value -s PTTYPE "$D" 2>/dev/null); [ -n "$TABLO" ] || TABLO=yok
+echo "TABLO=$TABLO"
+SS=$(cat /sys/block/$ad/queue/logical_block_size 2>/dev/null || echo 512)
+echo "SEKTOR=$SS"
+echo "BOYUT=$(blockdev --getsize64 "$D")"
+
+# en büyük boş alan (en az 1 MiB hizalı)
+if [ "$TABLO" != yok ]; then
+  sfdisk -F "$D" 2>/dev/null | awk -v ss="$SS" '
+    $1 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ { if ($3 > en) { en = $3; bas = $1 } }
+    END { if (en) { printf "BOS=%d\nBOS_BAS=%d\nBOS_SEK=%d\n", en * ss, bas, en } else print "BOS=0" }'
+else
+  echo "BOS=0"
+fi
+
+ESP=""; WIN=""; WINBOOT=""; sayi=0
+for p in $(lsblk -nrpo NAME,TYPE "$D" | awk '$2 == "part" { print $1 }'); do
+  sayi=$((sayi + 1))
+  tur=$(lsblk -nrdo PARTTYPE "$p" 2>/dev/null)
+  fs=$(blkid -o value -s TYPE "$p" 2>/dev/null)
+  case "$tur" in c12a7328-f81f-11d2-ba4b-00a0c93ec93b|0xef) [ -z "$ESP" ] && ESP=$p ;; esac
+  case "$fs" in
+    BitLocker)
+      [ -z "$WIN" ] && { WIN=$p; echo "WIN_DURUM=bitlocker"; } ;;
+    ntfs)
+      m=/run/aether/disk-bilgi; mkdir -p $m
+      if mount -t ntfs3 -o ro "$p" $m 2>/dev/null || mount -t ntfs-3g -o ro "$p" $m 2>/dev/null; then
+        [ -z "$WIN" ] && { [ -d "$m/Windows/System32" ] || [ -d "$m/WINDOWS/system32" ]; } && WIN=$p
+        [ -z "$WINBOOT" ] && [ -f "$m/bootmgr" ] && WINBOOT=$p
+        umount $m
+      fi ;;
+  esac
+done
+echo "BOLUM_SAYI=$sayi"
+echo "ESP=$ESP"
+echo "WINDOWS=$WIN"
+echo "WIN_BOOT=$WINBOOT"
+if [ -n "$WIN" ] && [ "$(blkid -o value -s TYPE "$WIN")" = ntfs ]; then
+  echo "WIN_NO=$(cat /sys/class/block/$(basename "$WIN")/partition)"
+  echo "WIN_BOYUT=$(blockdev --getsize64 "$WIN")"
+  bilgi=$(LANG=C ntfsresize --info --force --no-action "$WIN" 2>&1)
+  min=$(echo "$bilgi" | sed -n 's/.*You might resize at \([0-9]*\) bytes.*/\1/p' | head -1)
+  if echo "$bilgi" | grep -qi "hibernat"; then echo "WIN_DURUM=uyku"
+  elif echo "$bilgi" | grep -qi "dirty\|chkdsk"; then echo "WIN_DURUM=kirli"
+  elif [ -n "$min" ]; then echo "WIN_DURUM=tamam"; echo "WIN_MIN=$min"
+  else echo "WIN_DURUM=okunamadi"
+  fi
+fi
